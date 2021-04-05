@@ -1,0 +1,7 @@
+# Project exclude paths
+/hadoop_review/target/
+/java_review/target/
+/jdbc_review/target/
+/kafka_review/target/
+/scala_review/target/
+/spark_review/target/

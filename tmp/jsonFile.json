@@ -1,0 +1,15 @@
+{
+  "name": "songsong",
+  "friends": [
+    "bingbing",
+    "lili"
+  ],
+  "children": {
+    "xiao song": 18,
+    "xiaoxiao song": 19
+  },
+  "address": {
+    "street": "hui long guan",
+    "city": "beijing"
+  }
+}
