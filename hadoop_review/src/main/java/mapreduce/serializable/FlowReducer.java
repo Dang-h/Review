@@ -1,4 +1,4 @@
-package mapredeuce.serializable;
+package mapreduce.serializable;
 
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Reducer;
