@@ -4,7 +4,7 @@ import org.apache.kafka.clients.producer.*;
 
 import java.util.Properties;
 
-public class CustomerProducerWithCallback {
+public class CustomProducerWithCallback {
 	public static void main(String[] args) {
 		// 带回调函数得API
 		// 回调函数会在producer收到ack是调用，异步调用

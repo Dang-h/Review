@@ -6,7 +6,7 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 
 import java.util.Properties;
 
-public class CustomerProducer {
+public class CustomProducer {
 	public static void main(String[] args) {
 
 		// 不带回调函数得API
