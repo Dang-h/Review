@@ -21,7 +21,7 @@
     kafka-console-consumer.sh --bootstrap-server hadoop100:9092
                               --topic first
                               --from-beginning
-                              --consumer.property group.id=group_first
+                              --consumer-property group.id=group_first
 
 ## 消费者组
 ### 查看消费者组列表
