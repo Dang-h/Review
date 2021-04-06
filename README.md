@@ -12,14 +12,17 @@
 
 ---
 ## [hadoop_review](hadoop_review/src/main/java)
+- [常用命令](hadoop_review/常用命令.md)
 - [hdfs](hadoop_review/src/main/java/hdfs)
 - [mapreduce](hadoop_review/src/main/java/mapreduce)
 
 ---
 ## [hive](hive_review/HiveSQL)
+- [常用函数](hive_review/HiveSQL/常用函数.md)
 
 ---
 ## [kafka](kafka_review/src/main/java/kafka)
+- [kafka常用命令](kafka_review/Kafka常用命令.md)
 - [consumer](kafka_review/src/main/java/kafka/consumer)
 - [producer](kafka_review/src/main/java/kafka/producer)
 - [interceptor](kafka_review/src/main/java/kafka/interceptor)
