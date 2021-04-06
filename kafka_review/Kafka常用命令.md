@@ -1,13 +1,21 @@
-## 创建Topic：
+# 目录
+- [创建Topic](#创建Topic)
+- [查看Topic](#查看Topic)
+- [修改Topic](#修改Topic)
+- [生产消息](#生产消息)
+- [消费者组](#消费者组)
+- [压力测试](#压力测试)
+
+## 创建Topic
 	kafka-topics.sh --zookeeper hadoop100:2181 --create --replication-factor 3 --partitions 4 --topic first
 
-## 查看Topic：
+## 查看Topic
 ### 查看Topic列表：
     kafka-topics.sh --zookeeper hadoop100:2182 --list
 ### 查看指定Topic详情：
     kafka-topics.sh --zookeeper hadoop100:2181 --describe --topic first
 
-## 修改Topic：
+## 修改Topic
 ### 增加分区：
     kafka-topics.sh --zookeeper hadoop100:2181 --alter --topic first --partitions 4
 ### 删除Topic：
@@ -45,4 +53,22 @@
 >LogEndOffset：简称LEO, 代表Partition的最高日志位移，其值对消费者不可见。
 
 ### 查看Topic各分区的偏移量
-kafka-run-class.sh kafka.tools.GetOffsetShell --broker-list hadoop100:9092 --topic first
+    kafka-run-class.sh kafka.tools.GetOffsetShell --broker-list hadoop100:9092 --topic first
+
+## 压力测试
+### 生产者
+    kafka-producer-perf-test.sh --topic test 
+                                --record-size 100
+                                --num-records 100000 
+                                --throughput -1
+                                --producer-props bootstrap.servers=hadoop100:9092,hadoop101:9092,hadoop102:9092
+> record-size 是一条信息有多大，单位是字节。<p> 
+  num-records 是总共发送多少条信息。<p>
+  throughput 是每秒多少条信息，设成-1，表示不限流，可测出生产者最大吞吐量
+
+### 消费者
+    kafka-consumer-perf-test.sh --broker-list hadoop100:9092,hadoop101:9092,hadoop102:9092 
+                                -- topic test 
+                                --fetch-size 10000 
+                                --messages 10000000 
+                                --threads 1
