@@ -29,11 +29,3 @@ for host in $HOSTLIST; do
     fi
   done
 done
-
-
-kafka-console-consumer.sh \
---bootstrap-server hadoop100:9092 \
---formatter "kafka.coordinator.group.GroupMetadataManager\$OffsetsMessageFormatter" \
---topic __consumer_offsets \
---consumer-property exclude.internal.topics=false \
---from-beginning
