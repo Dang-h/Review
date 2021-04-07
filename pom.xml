@@ -16,6 +16,7 @@
         <module>spark_review</module>
         <module>hive_review</module>
         <module>hadoop_review</module>
+        <module>flume_review</module>
     </modules>
 
     <dependencies>
