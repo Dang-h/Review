@@ -29,10 +29,15 @@
 - [partitioner](kafka_review/src/main/java/kafka/partitioner)
 
 ---
+## [Flume](flume_review/flume_review.md)
+- [案例](flume_review/jobConf/flume案例.md)
+
+---
 ## [spark](spark_review/src/main/scala)
 - [sparkCore](spark_review/src/main/scala/sparkCore)
 - [sparkSQL](spark_review/src/main/scala/sparkSQL)
 - [sparkStreaming](spark_review/src/main/scala/sparkStreaming)
+- [MVC架构使用实例](spark_review/src/main/scala/sparkCore/frameWork/MVC架构.md)
 
 ---
 ## [shell](shellScript)
