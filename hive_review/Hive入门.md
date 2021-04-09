@@ -1,7 +1,9 @@
 # HiveSQL
+
 HiveSQL入门，了解一下？😉
 
 ---
+
 - [HQL小练习](https://github.com/Dang-h/BigData/blob/master/Hive/Hive.md)
 - [一些设置](#一些设置)
 - [查看一些信息](#查看一些信息)
@@ -29,25 +31,32 @@ HiveSQL入门，了解一下？😉
 - [分桶及抽样查询](#分桶及抽样查询)
 - [常用函数](#常用函数)
     - [窗口函数](#窗口函数)
-
+    - [解析json数组](src/main/java/udtf/ExplodeJsonArray.java)
 
 ---
 
 ## HQL小知识
 
 ## 一些设置
+
 ```sql
-以本地模式运行
+-- 以本地模式运行
 /*
  当一个job满足如下条件才能真正使用本地模式：
  1.job的输入数据大小必须小于参数：hive.exec.mode.local.auto.inputbytes.max(默认128MB)
  2.job的map数必须小于参数：hive.exec.mode.local.auto.tasks.max(默认4)
  3.job的reduce数必须为0或者1
  */
-SET hive.exec.mode.local.auto=true;
+SET hive.exec.mode.local.auto = TRUE;
+
+-- 创建永久函数并与Java.class关联
+CREATE FUNCTION explode_json_array AS
+    'custom.hive.udtf.ExplodeJSONArray' USING jar
+    'hdfs://hadoop102:8020/user/hive/jars/hivefunction-1.0- SNAPSHOT.jar';
 ```
 
 ## 查看一些信息
+
 ```sql
 -- 查看内置函数
 SHOW FUNCTIONS;
@@ -62,7 +71,7 @@ DESC FUNCTION function_name;
 DESC FUNCTION EXTENDED add_months;
 
 -- 查看分区
-SHOW PARTITIONS table_name;
+SHOW PARTITIONS TABLE_NAME;
 
 -- 查看表的结构
 DESC FORMATTED student;
@@ -156,6 +165,7 @@ DESC DATABASE EXTENDED db_hive;
 ```
 
 ## DDL
+
 ```sql
 -- 创建数据库,数据库在HDFS上的默认存储路径是/user/hive/warehouse/*.db。
 CREATE DATABASE IF NOT EXISTS db_hive;
@@ -165,7 +175,7 @@ CREATE DATABASE IF NOT EXISTS db_hive2 LOCATION '/db_hive2.db';
 
 -- 创建表
 CREATE
-[EXTERNAL] TABLE [IF NOT EXISTS] table_name
+[EXTERNAL] TABLE [IF NOT EXISTS] TABLE_NAME
 (
     clo_name col_type [COMMENT col_comment],
     col_name2 col_tyoe2 [COMMENT col_comment2]
@@ -173,7 +183,7 @@ CREATE
     [PARTITIONED BY (col_name data_type [COMMENT col_comment])]
     [CLUSTERED BY (col_name, col_name1)]
     [SORTED BY (col_name [ASC|DESC], col_name) INTO num_buckets BUCKETS]
-    [ROW FORMAT row_format]
+    [ROW FORMAT ROW_FORMAT]
     [STORED AS file_format]
     [LOCATION hdfs_path]
     [TBLPROPERTIES (property_name=property_value, property_name1=property_value1)]
@@ -208,16 +218,16 @@ CREATE
 -- 创建普通表
 CREATE TABLE IF NOT EXISTS user_info
 (
-    uid  int,
-    name string,
-    age  int
+    uid int,
+    name STRING,
+    age int
 ) ROW FORMAT DELIMITED FIELDS TERMINATED BY '\t'
     STORED AS TEXTFILE
     LOCATION '/user/hive/warehouse/user_info';
 CREATE TABLE IF NOT EXISTS house_info
 (
-    houseId string,
-    uid     int
+    houseId STRING,
+    uid int
 ) ROW FORMAT DELIMITED FIELDS TERMINATED BY '\t'
     STORED AS TEXTFILE
     LOCATION '/user/hive/warehouse/house_info';
@@ -233,10 +243,11 @@ CREATE TABLE IF NOT EXISTS student3 LIKE student;
 
 
 --  创建外部表
-CREATE EXTERNAL TABLE stu_external
+CREATE
+EXTERNAL TABLE stu_external
 (
-    id   int,
-    name string
+    id   INT,
+    NAME STRING
 )
     ROW FORMAT DELIMITED FIELDS TERMINATED BY '\t'
     LOCATION '/student';
@@ -257,9 +268,9 @@ CREATE EXTERNAL TABLE stu_external
 CREATE TABLE dept_partition
 (
     deptno int,
-    dname  string,
-    loc    string
-) PARTITIONED BY (month string)
+    dname STRING,
+    loc STRING
+) PARTITIONED BY (MONTH STRING)
     ROW FORMAT DELIMITED FIELDS TERMINATED BY '\t';
 
 -- 查看分区表结构
@@ -293,33 +304,32 @@ LOAD DATA [LOCAL] INPATH '/data/hive/student.txt' [OVERWRITE] INTO TABLE student
 */
 
 -- 加载数据到分区
-LOAD DATA LOCAL INPATH '/opt/module/datas/dept.txt' INTO TABLE dept_partition PARTITION (month = '201906');
-LOAD DATA LOCAL INPATH '/opt/module/datas/dept.txt' INTO TABLE dept_partition PARTITION (month = '201905');
+LOAD DATA LOCAL INPATH '/opt/module/datas/dept.txt' INTO TABLE dept_partition PARTITION (MONTH = '201906');
+LOAD DATA LOCAL INPATH '/opt/module/datas/dept.txt' INTO TABLE dept_partition PARTITION (MONTH = '201905');
 
 --  创建二级分区表
 CREATE TABLE dept_partition2
 (
-deptno int,
-dname  string,
-loc    string
-)
-PARTITIONED BY (month string, day string) ROW FORMAT DELIMITED FIELDS TERMINATED BY '\t';
+    deptno int,
+    dname STRING,
+    loc STRING
+) PARTITIONED BY (MONTH STRING, DAY STRING) ROW FORMAT DELIMITED FIELDS TERMINATED BY '\t';
 
 -- 加载数据到二级分区表
-LOAD DATA LOCAL INPATH '/data/hive/dept.txt' INTO TABLE dept_partition2 PARTITION (month = '201906', day = '30');
+LOAD DATA LOCAL INPATH '/data/hive/dept.txt' INTO TABLE dept_partition2 PARTITION (MONTH = '201906', DAY = '30');
 
 
 --  分区表小例子
 // 建表
 CREATE TABLE t_visit_video
 (
-username   string,
-video_name string
-) PARTITIONED BY (day string)
+    username STRING,
+    video_name STRING
+) PARTITIONED BY (DAY STRING)
 ROW FORMAT DELIMITED FIELDS TERMINATED BY ',';
 
 // 导入数据
-LOAD DATA LOCAL INPATH '/test/collect_set_test.txt' INTO TABLE t_visit_video PARTITION (day = '2019-07-10');
+LOAD DATA LOCAL INPATH '/test/collect_set_test.txt' INTO TABLE t_visit_video PARTITION (DAY = '2019-07-10');
 
 --  通过查询语句向表中插数据
 INSERT INTO TABLE student
@@ -329,13 +339,13 @@ FROM table_name;
 -- 创建一张分区表
 CREATE TABLE student
 (
-id   int,
-name string
-) PARTITIONED BY (month string) ROW FORMAT DELIMITED FIELDS TERMINATED BY '\t';
+    id int,
+    name STRING
+) PARTITIONED BY (MONTH STRING) ROW FORMAT DELIMITED FIELDS TERMINATED BY '\t';
 -- 插入数据
-INSERT INTO TABLE student PARTITION (month = '201906')
+INSERT INTO TABLE student PARTITION (MONTH = '201906')
 VALUES (1, 'zhangsan'),
-(2, '王五');
+    (2, '王五');
 
 
 /*
@@ -382,40 +392,40 @@ ALTER DATABASE db_hive SET DBPROPERTIES ('createtime' = '20190628');
 
 -- 修改表为外部表
 ALTER TABLE student
-SET TBLPROPERTIES ('EXTERNAL' = 'TRUE');
+SET TBLPROPERTIES('EXTERNAL' = 'TRUE');
 -- 注意：('EXTERNAL'='TRUE')和('EXTERNAL'='FALSE')为固定写法，区分大小写！
 
 -- 重命名表
 ALTER TABLE table_name
-RENAME TO new_table_name;
+    RENAME TO new_table_name;
 
 -- 增加/修改/替换列信息
 -- 更新列
 ALTER TABLE table_name
-CHANGE [COLUMN] col_old_name col_new_name column_tyoe [COMMENT col_comment];
+    CHANGE [COLUMN] col_old_name col_new_name column_tyoe [COMMENT col_comment];
 -- 增加和替换列
 ALTER TABLE table_name
-ADD | REPLACE COLUMS (col_name data_type);
+    ADD | REPLACE COLUMS (col_name data_type);
 
 -- 示例
 ALTER TABLE dept_partition
-ADD COLUMNS (deptdesc string);
+    ADD COLUMNS (deptdesc STRING);
 
 -- 将列deptdesc改名为desc
 ALTER TABLE dept_partition
-CHANGE COLUMN deptdesc desc string;
+    CHANGE COLUMN deptdesc desc STRING;
 
 -- 更改字段类型，change后字段名称写两遍
 ALTER TABLE dept_partition2
-CHANGE deptno deptno string;
+    CHANGE deptno deptno STRING;
 
 --  增加分区
 ALTER TABLE dept_partition
-ADD PARTITION (month = '201907');
+    ADD PARTITION (MONTH = '201907');
 
 -- 删除分区
 ALTER TABLE dept_partition
-DROP PARTITION (month = '201906');
+    DROP PARTITION (MONTH = '201906');
 
 -- 查看分区数
 SHOW PARTITIONS dept_partition;
@@ -433,8 +443,8 @@ DROP DATABASE db_hive CASCADE;
 TRUNCATE TABLE stu_buck;
 ```
 
-
 ## DML
+
 ```sql
 -- 查询分区表数据
 SELECT *
@@ -475,30 +485,29 @@ WHERE month = '201905';
  */
 ```
 
-
 ## 查询小练习
+
 ```sql
 
 -- 创建部门表
 CREATE TABLE IF NOT EXISTS dept
 (
     deptno int,
-    dname  string,
-    loc    string
+    dname STRING,
+    loc STRING
 ) ROW FORMAT DELIMITED FIELDS TERMINATED BY '\t';
 -- 创建员工表
 CREATE TABLE IF NOT EXISTS emp
 (
-    empno    int,
-    ename    string,
-    job      string,
-    mgr      int,
-    hiredate string,
-    sal      double,
-    comm     double,
-    deptno   int
-)
-    ROW FORMAT DELIMITED FIELDS TERMINATED BY '\t';
+    empno  int,
+    ename STRING,
+    job STRING,
+    mgr    int,
+    hiredate STRING,
+    sal    double,
+    comm   double,
+    deptno int
+) ROW FORMAT DELIMITED FIELDS TERMINATED BY '\t';
 -- 导入数据
 LOAD DATA LOCAL INPATH '/data/hive/dept.txt' INTO TABLE dept;
 LOAD DATA LOCAL INPATH '/data/hive/emp.txt' INTO TABLE emp;
@@ -545,10 +554,11 @@ FROM dept;
 */
 
 ```
+
 ### 计算emp表每个部门的平均工资
 
 ```sql
-SELECT e.deptno, avg(e.sal) AS avg_sal
+SELECT e.deptno, AVG(e.sal) AS avg_sal
 FROM emp e
 GROUP BY e.deptno;
 /*
@@ -563,6 +573,7 @@ GROUP BY e.deptno;
 ```
 
 ### 计算emp每个部门中每个岗位的最高薪水
+
 ```sql
 -- 1、每个部门，部门分组
 -- 2、每个岗位，岗位分组
@@ -586,7 +597,7 @@ GROUP BY deptno, job;
 +---------+------------+--+
  */
 
-SELECT e.deptno, e.job, max(e.sal) AS max_sal
+SELECT e.deptno, e.job, MAX(e.sal) AS max_sal
 FROM emp e
 GROUP BY e.deptno, e.job;
 /*
@@ -609,7 +620,7 @@ GROUP BY e.deptno, e.job;
 ### 查看一个部门有哪些职位,及部门最高薪资
 
 ```sql
-SELECT e.deptno, concat_ws('|', collect_set(e.job)) dept_job, max(e.sal) max_sal
+SELECT e.deptno, CONCAT_WS('|', collect_set(e.job)) dept_job, MAX(e.sal) max_sal
 FROM emp e
 GROUP BY e.deptno;
 /*
@@ -630,6 +641,7 @@ GROUP BY e.deptno;
 ```
 
 ### 求每个部门的平均薪水大于2000的部门
+
 ```sql
 /*
  1、求部门平均工资
@@ -637,7 +649,7 @@ GROUP BY e.deptno;
  */
 
 -- 1
-SELECT deptno, avg(sal) AS avg_sal
+SELECT deptno, AVG(sal) AS avg_sal
 FROM emp
 GROUP BY deptno;
 /*
@@ -651,7 +663,7 @@ GROUP BY deptno;
  */
 
 -- 2
-SELECT deptno, avg(sal) AS avg_sql
+SELECT deptno, AVG(sal) AS avg_sql
 FROM emp
 GROUP BY deptno
 HAVING avg_sql > 2000;
@@ -666,6 +678,7 @@ HAVING avg_sql > 2000;
 ```
 
 ## join
+
 ```sql
 /*
  只支持等值连接，不支持非等值连接
@@ -712,8 +725,10 @@ FROM emp AS e
  */
 ```
 
-###  内连接
+### 内连接
+
 > 只有进行连接的两个表中都存在与连接条件相匹配的数据才会被保留下来。
+
 ```sql
 SELECT e.empno AS empno, e.ename AS ename, d.deptno AS deptno
 FROM emp AS e
@@ -742,6 +757,7 @@ FROM emp AS e
 ```
 
 ### 左外连接
+
 ```sql
 /*
  LEFT [OUTER] JOIN操作：左边表中的值无论是否在右表中存在，都输出；
@@ -807,12 +823,13 @@ FROM dept AS d
 ```
 
 ### 满外连接
+
 > 返回所有表中符合WHERE语句条件的所有记录。如果任一表的指定字段没有符合条件的值的话，那么就使用NULL值替代。
+
 ```sql
 SELECT e.ename, e.empno, d.deptno, d.dname
-FROM emp AS e
-         FULL JOIN dept AS d
-                   ON e.deptno = d.deptno;
+FROM emp AS e FULL JOIN dept AS d
+ON e.deptno = d.deptno;
 /*
 +----------+----------+-----------+-------------+--+
 | e.ename  | e.empno  | d.deptno  |   d.dname   |
@@ -837,6 +854,7 @@ FROM emp AS e
 ```
 
 ## 排序
+
 ```sql
 -- order by：全局排序，只有一个Reducer参与运算，会把所有数据加载到内存中进行排序
 -- Sort by：Reducern局部排序，为每个reducer产生一个排序文件。每个Reducer内部进行排序，对全局结果集来说不是排序。
@@ -845,20 +863,21 @@ FROM emp SORT BY deptno DESC;
 ```
 
 ### 分区排序（Distribute By）
+
 ```sql
 /*
  控制某个特定行应该到哪个reducer
  */
 --  设置reduce个数
-SET mapreduce.job.reduces=3;
+SET mapreduce.job.reduces = 3;
 -- 先按照部门编号分区，再按照员工编号降序排序。
 INSERT OVERWRITE LOCAL DIRECTORY '/opt/module/datas/distribute-result'
 SELECT *
 FROM emp DISTRIBUTE BY deptno SORT BY empno DESC;
 ```
 
-
 ## 分桶及抽样查询
+
 ```sql
 /*
  分区提供一个隔离数据和优化查询的便利方式，
@@ -869,28 +888,28 @@ FROM emp DISTRIBUTE BY deptno SORT BY empno DESC;
 -- 创建分桶表，指定分2个桶
 CREATE TABLE stu_buck
 (
-    id   int,
-    name string
+    id int,
+    name STRING
 ) CLUSTERED BY (id) INTO 2 BUCKETS ROW FORMAT DELIMITED FIELDS TERMINATED BY '\t';
 -- 创建普通表stu
 CREATE TABLE stu
 (
-    id   int,
-    name string
-)
-    ROW FORMAT DELIMITED FIELDS TERMINATED BY '\t';
+    id int,
+    name STRING
+) ROW FORMAT DELIMITED FIELDS TERMINATED BY '\t';
 -- 向普通表stu导入数据
 LOAD DATA LOCAL INPATH '/data/hive/student.txt' INTO TABLE stu;
 -- 设置属性
-SET hive.enforce.bucketing=true;
-SET mapreduce.job.reduces=-1;
+SET hive.enforce.bucketing = TRUE;
+SET mapreduce.job.reduces = -1;
 -- 通过子查询的方式，导入数据到分桶表
 INSERT INTO TABLE stu_buck
 SELECT id, name
 FROM stu;
 -- 查询分桶的数据
 SELECT *
-FROM stu_buck TABLESAMPLE (BUCKET 1 OUT OF 2 ON id);
+FROM stu_buck TABLESAMPLE (BUCKET 1 OUT OF 2
+ON id);
 /*
 +--------------+----------------+--+
 | stu_buck.id  | stu_buck.name  |
@@ -908,7 +927,9 @@ FROM stu_buck TABLESAMPLE (BUCKET 1 OUT OF 2 ON id);
 ```
 
 ## 常用函数
+
 [常用函数使用](HiveSQL/常用函数.md)
+
 ```sql
 -- NVL：给值为NULL 的数据赋值。格式：NVL( value，default_value)。default_value需要和字段类型相同
 -- 如果value 为NULL，返回default_value的值，否则返回value的值，如果两个参数都为NULL，则返回NULL。
@@ -936,8 +957,8 @@ FROM emp;
 */
 ```
 
-
 ### 求出不同部门男女各多少人
+
 ```sql
 -- case when 的使用
 /*
@@ -949,15 +970,14 @@ FROM emp;
 
 CREATE TABLE emp_sex
 (
-    name    string,
-    dept_id string,
-    sex     string
-)
-    ROW FORMAT DELIMITED FIELDS TERMINATED BY "\t";
+    name STRING,
+    dept_id STRING,
+    sex STRING
+) ROW FORMAT DELIMITED FIELDS TERMINATED BY "\t";
 
 SELECT dept_id,
-       sum(CASE sex WHEN '男' THEN 1 ELSE 0 END) male_count,
-       sum(CASE sex WHEN '女' THEN 1 ELSE 0 END) female_count
+       SUM(CASE sex WHEN '男' THEN 1 ELSE 0 END) male_count,
+       SUM(CASE sex WHEN '女' THEN 1 ELSE 0 END) female_count
 FROM emp_sex
 GROUP BY dept_id;
 /*
@@ -980,6 +1000,7 @@ GROUP BY dept_id;
  ```
 
 ### 把星座和血型一样的人归类到一起
+
 ```sql
 /*
  行转列
@@ -1001,17 +1022,16 @@ GROUP BY dept_id;
 
 CREATE TABLE person_info
 (
-    name          string,
-    constellation string,
-    blood_type    string
-)
-    ROW FORMAT DELIMITED FIELDS TERMINATED BY "\t";
+    name STRING,
+    constellation STRING,
+    blood_type STRING
+) ROW FORMAT DELIMITED FIELDS TERMINATED BY "\t";
 
 -- 从结果"大海|凤姐" => 需要将多个字段用指定符号连接,函数concat_ws(separator, fields)
 -- 从整体结果"射手座,A 大海|凤姐" => 还需将前半段"射手座"和后半段"大海|凤姐"拼接,函数 CONCAT(string A/col, string B/col…)
 
 -- 1. 将星座和血型拼接
-SELECT name, concat(constellation, ",", blood_type) base
+SELECT name, CONCAT(constellation, ",", blood_type) base
 FROM person_info;
 /*
 +-------+--------+--+
@@ -1026,8 +1046,8 @@ FROM person_info;
 */
 
 -- 2. 列转行
-SELECT t1.base, concat_ws('|', collect_set(t1.name)) name
-FROM (SELECT name, concat(constellation, ",", blood_type) base
+SELECT t1.base, CONCAT_WS('|', collect_set(t1.name)) name
+FROM (SELECT name, CONCAT(constellation, ",", blood_type) base
       FROM person_info) t1
 GROUP BY t1.base;
 /*
@@ -1040,7 +1060,9 @@ GROUP BY t1.base;
 +----------+----------+------+
 */
 ```
+
 ### 分类合并
+
 ```sql
 -- collect_list/set再识
 /*
@@ -1121,10 +1143,9 @@ UDTFs can be used in the SELECT expression list and as a part of LATERAL VIEW.
 -- 创建movie表
 CREATE TABLE movie_info
 (
-    movie    string,
-    category array<string>
-)
-    ROW FORMAT DELIMITED FIELDS TERMINATED BY "\t"
+    movie STRING,
+    category array< STRING >
+) ROW FORMAT DELIMITED FIELDS TERMINATED BY "\t"
 --         row format delimited fields terminated by "\t"  ==> 指定列分隔符
         COLLECTION ITEMS TERMINATED BY ",";
 --          collection items terminated by ","             ==> 指定map Stract 和 array 分隔符
@@ -1162,7 +1183,7 @@ FROM movie_info LATERAL VIEW explode(category) table_tmp AS category_name;
 | 《战狼2》     | 灾难             |
 +--------------+----------------+--+
 */
-SELECT category_name, concat_ws('|', collect_list(movie)) movie
+SELECT category_name, CONCAT_WS('|', collect_list(movie)) movie
 FROM movie_info LATERAL VIEW explode(category) table_tmp AS category_name
 GROUP BY category_name;
 /*
@@ -1183,6 +1204,7 @@ GROUP BY category_name;
 ```
 
 ## 窗口函数
+
     （给聚合函数开窗）
     -- 在order by和limit 之前执行
     /*
@@ -1195,23 +1217,22 @@ GROUP BY category_name;
      7. LEAD(col,n, default_val)：往后第n行数据
      8. NTILE(n)：把有序分区中的行分发到指定数据的组中，各个组有编号，编号从1开始，对于每一行，NTILE返回此行所属的组的编号。注意：n必须为int类型
      */
-    
 
 ### 窗口函数小练习
- - [查询在2017年4月份购买过的顾客及总人数](#查询在2017年4月份购买过的顾客及总人数)
- - [查询顾客的购买明细及月购买总额](#查询顾客的购买明细及月购买总额)
- - [上述的场景, 将每个顾客的cost按照日期进行累加](#将每个顾客的cost按照日期进行累加)
- - [查询每个顾客上次的购买时间](#查询每个顾客上次的购买时间)
- - [查询前20%时间的订单信息](#查询前20%时间的订单信息)
 
+- [查询在2017年4月份购买过的顾客及总人数](#查询在2017年4月份购买过的顾客及总人数)
+- [查询顾客的购买明细及月购买总额](#查询顾客的购买明细及月购买总额)
+- [上述的场景, 将每个顾客的cost按照日期进行累加](#将每个顾客的cost按照日期进行累加)
+- [查询每个顾客上次的购买时间](#查询每个顾客上次的购买时间)
+- [查询前20%时间的订单信息](#查询前20%时间的订单信息)
 
 ```sql
 -- 建表
 CREATE TABLE business
 (
-    name      string COMMENT '姓名',
-    orderdate string COMMENT '购买日期',
-    cost      int COMMENT '花费金额'
+    name STRING COMMENT '姓名',
+    orderdate STRING COMMENT '购买日期',
+    cost int COMMENT '花费金额'
 ) ROW FORMAT DELIMITED FIELDS TERMINATED BY ',';
 /*
 +----------------+---------------------+----------------+--+
@@ -1236,10 +1257,11 @@ CREATE TABLE business
 ```
 
 #### 查询在2017年4月份购买过的顾客及总人数
+
 ```sql
-SELECT name, count(*) OVER ()
+SELECT name, COUNT(*) OVER ()
 FROM business
-WHERE substring(orderdate, 1, 7) = '2017-04'
+WHERE SUBSTRING(orderdate, 1, 7) = '2017-04'
 GROUP BY name;
 /*
 +-------+-----------------+--+
@@ -1250,10 +1272,10 @@ GROUP BY name;
 +-------+-----------------+--+
 */
 
-SELECT date_format(orderdate, 'yyyy-MM') order_date, name, count(*) OVER () order_count
+SELECT DATE_FORMAT(orderdate, 'yyyy-MM') order_date, name, COUNT(*) OVER () order_count
 FROM business
-WHERE date_format(orderdate, 'yyyy-MM') = '2017-04'
-GROUP BY name, date_format(orderdate, 'yyyy-MM');
+WHERE DATE_FORMAT(orderdate, 'yyyy-MM') = '2017-04'
+GROUP BY name, DATE_FORMAT(orderdate, 'yyyy-MM');
 /*
 +-------------+-------+--------------+--+
 | order_date  | name  | order_count  |
@@ -1265,8 +1287,9 @@ GROUP BY name, date_format(orderdate, 'yyyy-MM');
 ```
 
 #### 查询顾客的购买明细及月购买总额
+
 ```sql
-SELECT name, orderdate, cost, sum(cost) OVER (PARTITION BY month(orderdate))
+SELECT name, orderdate, cost, SUM(cost) OVER (PARTITION BY MONTH(orderdate))
 FROM business;
 /*
 +-------+-------------+-------+---------------+--+
@@ -1291,6 +1314,7 @@ FROM business;
 ```
 
 #### 将每个顾客的cost按照日期进行累加
+
 ```sql
 /*
  over() 的使用
@@ -1298,22 +1322,23 @@ FROM business;
 SELECT name,
        orderdate,
        cost,
-       sum(cost) OVER () AS sample1,--所有行相加
-       sum(cost) OVER (PARTITION BY name) AS sample2,--按name分组，组内数据相加
-       sum(cost) OVER (PARTITION BY name ORDER BY orderdate) AS sample3,--按name分组，组内数据累加
+       SUM(cost) OVER () AS sample1,
+       - -所有行相加
+                            sum(cost) OVER (PARTITION BY NAME) AS sample2,--按name分组，组内数据相加
+       sum(cost) OVER (PARTITION BY NAME ORDER BY orderdate) AS sample3,--按name分组，组内数据累加
        sum(cost)
-           OVER (PARTITION BY name ORDER BY orderdate ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW ) AS sample4,--和sample3一样,由起点到当前行的聚合
+           OVER (PARTITION BY NAME ORDER BY orderdate ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW ) AS sample4,--和sample3一样,由起点到当前行的聚合
        sum(cost)
-           OVER (PARTITION BY name ORDER BY orderdate ROWS BETWEEN 1 PRECEDING AND CURRENT ROW) AS sample5, --当前行和前面一行做聚合
-       sum(cost) OVER (PARTITION BY name ORDER BY orderdate ROWS BETWEEN 1 PRECEDING AND 1 FOLLOWING ) AS sample6,--当前行和前边一行及后面一行
+           OVER (PARTITION BY NAME ORDER BY orderdate ROWS BETWEEN 1 PRECEDING AND CURRENT ROW) AS sample5, --当前行和前面一行做聚合
+       sum(cost) OVER (PARTITION BY NAME ORDER BY orderdate ROWS BETWEEN 1 PRECEDING AND 1 FOLLOWING ) AS sample6,--当前行和前边一行及后面一行
        sum(cost)
-           OVER (PARTITION BY name ORDER BY orderdate ROWS BETWEEN CURRENT ROW AND UNBOUNDED FOLLOWING ) AS sample7 --当前行及后面所有行
+           OVER (PARTITION BY NAME ORDER BY orderdate ROWS BETWEEN CURRENT ROW AND UNBOUNDED FOLLOWING ) AS sample7 --当前行及后面所有行
 FROM business;
 -- sample1 所有行相加
 SELECT name,
        orderdate,
        cost,
-       sum(cost) OVER () AS sample1
+       SUM(cost) OVER () AS sample1
 FROM business;
 /*
 +-------+-------------+-------+----------+--+
@@ -1340,8 +1365,8 @@ FROM business;
 SELECT name,
        orderdate,
        cost,
-       sum(cost) OVER () AS sample1,
-       sum(cost) OVER (PARTITION BY name) AS sample2
+       SUM(cost) OVER ()                  AS sample1,
+       SUM(cost) OVER (PARTITION BY name) AS sample2
 FROM business;
 /*
 +-------+-------------+-------+----------+----------+--+
@@ -1368,9 +1393,9 @@ FROM business;
 SELECT name,
        orderdate,
        cost,
-       sum(cost) OVER () AS sample1,
-       sum(cost) OVER (PARTITION BY name) AS sample2,
-       sum(cost) OVER (PARTITION BY name ORDER BY orderdate) AS sample3
+       SUM(cost) OVER ()                                     AS sample1,
+       SUM(cost) OVER (PARTITION BY name)                    AS sample2,
+       SUM(cost) OVER (PARTITION BY name ORDER BY orderdate) AS sample3
 FROM business;
 /*
 +-------+-------------+-------+----------+----------+----------+--+
@@ -1397,10 +1422,10 @@ FROM business;
 SELECT name,
        orderdate,
        cost,
-       sum(cost) OVER () AS sample1,
-       sum(cost) OVER (PARTITION BY name) AS sample2,
-       sum(cost) OVER (PARTITION BY name ORDER BY orderdate) AS sample3,
-       sum(cost)
+       SUM(cost) OVER ()                                                                                AS sample1,
+       SUM(cost) OVER (PARTITION BY name)                                                               AS sample2,
+       SUM(cost) OVER (PARTITION BY name ORDER BY orderdate)                                            AS sample3,
+       SUM(cost)
            OVER (PARTITION BY name ORDER BY orderdate ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS sample4
 FROM business;
 /*
@@ -1427,10 +1452,10 @@ FROM business;
 SELECT name,
        orderdate,
        cost,
-       sum(cost)
+       SUM(cost)
            OVER (PARTITION BY name ORDER BY orderdate ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS sample4,
-       sum(cost)
-           OVER (PARTITION BY name ORDER BY orderdate ROWS BETWEEN 1 PRECEDING AND CURRENT ROW) AS sample5
+       SUM(cost)
+           OVER (PARTITION BY name ORDER BY orderdate ROWS BETWEEN 1 PRECEDING AND CURRENT ROW)         AS sample5
 FROM business;
 /*
 +-------+-------------+-------+----------+----------+--+
@@ -1456,9 +1481,9 @@ FROM business;
 SELECT name,
        orderdate,
        cost,
-       sum(cost)
-           OVER (PARTITION BY name ORDER BY orderdate ROWS BETWEEN 1 PRECEDING AND CURRENT ROW) AS sample5,
-       sum(cost) OVER (PARTITION BY name ORDER BY orderdate ROWS BETWEEN 1 PRECEDING AND 1 FOLLOWING ) AS sample6
+       SUM(cost)
+           OVER (PARTITION BY name ORDER BY orderdate ROWS BETWEEN 1 PRECEDING AND CURRENT ROW)        AS sample5,
+       SUM(cost) OVER (PARTITION BY name ORDER BY orderdate ROWS BETWEEN 1 PRECEDING AND 1 FOLLOWING ) AS sample6
 FROM business;
 /*
 +-------+-------------+-------+----------+----------+--+
@@ -1484,10 +1509,10 @@ FROM business;
 SELECT name,
        orderdate,
        cost,
-       sum(cost)
-           OVER (PARTITION BY name ORDER BY orderdate ROWS BETWEEN 1 PRECEDING AND CURRENT ROW) AS sample5,
-       sum(cost) OVER (PARTITION BY name ORDER BY orderdate ROWS BETWEEN 1 PRECEDING AND 1 FOLLOWING ) AS sample6,
-       sum(cost)
+       SUM(cost)
+           OVER (PARTITION BY name ORDER BY orderdate ROWS BETWEEN 1 PRECEDING AND CURRENT ROW)          AS sample5,
+       SUM(cost) OVER (PARTITION BY name ORDER BY orderdate ROWS BETWEEN 1 PRECEDING AND 1 FOLLOWING )   AS sample6,
+       SUM(cost)
            OVER (PARTITION BY name ORDER BY orderdate ROWS BETWEEN CURRENT ROW AND UNBOUNDED FOLLOWING ) AS sample7
 FROM business;
 /*
@@ -1512,8 +1537,8 @@ FROM business;
 */
 ```
 
-
 #### 查询每个顾客上次的购买时间
+
 ```sql
 /*
  log(col, num,default)往前num行的数据，不存在时默认为default，不设置默认值，不存在时用null补齐
@@ -1521,8 +1546,8 @@ FROM business;
 SELECT name,
        orderdate,
        cost,
-       lag(orderdate, 1, '未购买过') OVER (PARTITION BY name ORDER BY orderdate ) AS time1,
-       lag(orderdate, 2) OVER (PARTITION BY name ORDER BY orderdate) AS time2
+       LAG(orderdate, 1, '未购买过') OVER (PARTITION BY name ORDER BY orderdate ) AS time1,
+       LAG(orderdate, 2) OVER (PARTITION BY name ORDER BY orderdate)          AS time2
 FROM business;
 /*
 +-------+-------------+-------+-------------+-------------+--+
@@ -1548,6 +1573,7 @@ FROM business;
 ```
 
 #### 查询前20%时间的订单信息
+
 ```sql
 /*
  NTILE(n)：把有序分区中的行分发到指定数据的组中，各个组有编号，编号从1开始，对于每一行，NTILE返回此行所属的组的编号。注意：n必须为int类型
@@ -1556,7 +1582,7 @@ FROM business;
  */
 SELECT *
 FROM (
-         SELECT name, orderdate, cost, ntile(5) OVER (ORDER BY orderdate) sorted
+         SELECT name, orderdate, cost, NTILE(5) OVER (ORDER BY orderdate) sorted
          FROM business
      ) t
 WHERE sorted = 1;
@@ -1582,18 +1608,17 @@ WHERE sorted = 1;
 -- 建表，加载数据
 CREATE TABLE score
 (
-    name    string COMMENT '姓名',
-    subject string COMMENT '学科',
-    score   int COMMENT '分数'
-)
-    ROW FORMAT DELIMITED FIELDS TERMINATED BY "\t";
+    name STRING COMMENT '姓名',
+    subject STRING COMMENT '学科',
+    score int COMMENT '分数'
+) ROW FORMAT DELIMITED FIELDS TERMINATED BY "\t";
 LOAD DATA LOCAL INPATH '/data/hive/score.txt' INTO TABLE score;
 -- 需求：计算每门学科成绩排名。
 -- rank（） 排序相同时会重复，总数不变，按照学科分组，组内按照分数降序排列
 SELECT name,
        subject,
        score,
-       rank() OVER (PARTITION BY subject ORDER BY score DESC) rp
+       RANK() OVER (PARTITION BY subject ORDER BY score DESC) rp
 FROM score;
 /*
 +-------+----------+--------+-----+--+
@@ -1619,8 +1644,8 @@ FROM score;
 SELECT name,
        subject,
        score,
-       rank() OVER (PARTITION BY subject ORDER BY score DESC) rp,
-       dense_rank() OVER (PARTITION BY subject ORDER BY score DESC) drp
+       RANK() OVER (PARTITION BY subject ORDER BY score DESC)       rp,
+       DENSE_RANK() OVER (PARTITION BY subject ORDER BY score DESC) drp
 FROM score;
 
 /*
@@ -1645,9 +1670,9 @@ FROM score;
 SELECT name,
        subject,
        score,
-       rank() OVER (PARTITION BY subject ORDER BY score DESC) rp,
-       dense_rank() OVER (PARTITION BY subject ORDER BY score DESC) drp,
-       row_number() OVER (PARTITION BY subject ORDER BY score DESC) rmp
+       RANK() OVER (PARTITION BY subject ORDER BY score DESC)       rp,
+       DENSE_RANK() OVER (PARTITION BY subject ORDER BY score DESC) drp,
+       ROW_NUMBER() OVER (PARTITION BY subject ORDER BY score DESC) rmp
 FROM score;
 /*
 +-------+----------+--------+-----+------+------+--+

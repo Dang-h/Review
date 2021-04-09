@@ -18,6 +18,7 @@
 
 ---
 ## [hive](hive_review/HiveSQL)
+- [Hive入门](hive_review/Hive入门.md)
 - [常用函数](hive_review/HiveSQL/常用函数.md)
 
 ---
