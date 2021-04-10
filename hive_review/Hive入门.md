@@ -347,18 +347,6 @@ INSERT INTO TABLE student PARTITION (MONTH = '201906')
 VALUES (1, 'zhangsan'),
     (2, '王五');
 
-
-/*
-数据：
-张三,大唐双龙传
-李四,天下无贼
-张三,神探狄仁杰
-李四,霸王别姬
-李四,霸王别姬
-王五,机器人总动员
-王五,放牛班的春天
-王五,盗梦空间
-*/
 // 查看
 SELECT *
 FROM t_visit_video;
@@ -398,6 +386,22 @@ SET TBLPROPERTIES('EXTERNAL' = 'TRUE');
 -- 重命名表
 ALTER TABLE table_name
     RENAME TO new_table_name;
+
+-- 更改列类型
+ALTER TABLE student_new
+REPLACE COLUMNS (id STRING, name STRING, score INT);
+  
+ALTER TABLE student
+REPLACE COLUMNS (id STRING);
+
+-- 更改列名
+ALTER TABLE student_new
+    CHANGE id ids STRING;
+
+-- 添加列
+ALTER TABLE student_new
+    ADD COLUMNS (score INT);
+
 
 -- 增加/修改/替换列信息
 -- 更新列
