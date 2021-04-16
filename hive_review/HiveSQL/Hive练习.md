@@ -6,6 +6,7 @@
 - [TopN](#TopN)
     - [TopN-2](#TopN2)
     - [TopN-3](#TopN3)
+    - [TopN-4](#TopN4)
 - [第一笔订单](#第一笔订单)
     - [第一笔订单2](#第一笔订单2)
 - [区间求值](#区间求值)
@@ -430,6 +431,45 @@ FROM (SELECT temp.dist_id,
              RANK() OVER (PARTITION BY temp.dist_id ORDER BY temp.sum_money DESC) ranks
       FROM TEMP) t1
 WHERE ranks = 1;
+```
+
+### TopN4
+    各班分数Top3，分数差值
+```sql
+-- 编写sql语句实现每班前三名，分数一样并列，同时求出前三名按名次排序的分差
+CREATE TABLE student
+(
+    sid   string,--学号
+    cid   string,--班级号
+    score string -- 分数
+)
+    ROW FORMAT DELIMITED FIELDS TERMINATED BY '\t';
+
+INSERT OVERWRITE TABLE student
+VALUES ("1", "1901", "90"),
+       ("2", "1901", "90"),
+       ("3", "1901", "83"),
+       ("4", "1901", "60"),
+       ("5", "1902", "66"),
+       ("6", "1902", "23"),
+       ("7", "1902", "99"),
+       ("8", "1902", "67"),
+       ("9", "1902", "87");
+
+
+
+explain EXTENDED SELECT t1.sid,
+       t1.cid,
+       t1.score,
+       t1.rank,
+       t1. diff_score
+FROM (SELECT sid,
+             cid,
+             score,
+             DENSE_RANK() OVER (PARTITION BY cid ORDER BY score DESC ) AS rank,
+             (score - LAG(score, 1, score) OVER (PARTITION BY cid ORDER BY score DESC )) as diff_score
+      FROM student) t1
+WHERE rank <= 3;
 ```
 
 ---
