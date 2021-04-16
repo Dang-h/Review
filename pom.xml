@@ -17,6 +17,7 @@
         <module>hive_review</module>
         <module>hadoop_review</module>
         <module>flume_review</module>
+        <module>flink_review</module>
     </modules>
 
     <dependencies>
