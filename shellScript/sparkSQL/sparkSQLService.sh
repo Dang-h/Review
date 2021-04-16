@@ -3,8 +3,8 @@
 SPARKDIR="/opt/module/spark-3.0-yarn"
 
 if [ $# -lt 1 ]; then
-    echo "No Args Input..."
-    exit;
+  echo "No Args Input..."
+  exit
 fi
 
 function check_process() {
@@ -15,7 +15,7 @@ function check_process() {
 
   echo $pid
 
-  [ -z "$pid" ]  && return 1 || return 0
+  [ -z "$pid" ] && return 1 || return 0
 }
 
 function sparkSql_start() {
@@ -33,22 +33,23 @@ function sparkSql_stop() {
   cmd="$SPARKDIR/sbin/stop-thriftserver.sh"
 
   if [ -n "$server2pid" ]; then
-      eval $cmd
+    eval $cmd
   else
     echo "thriftserver 服务未启动"
   fi
 
 }
 
-
 case $1 in
 "start")
   echo "===== 启动sparkSQLService ====="
   sparkSql_start
+  ${SPARK_HOME}/sbin/start-history-server.sh
   ;;
 "stop")
   echo "===== 关闭sparkSQLService ====="
   sparkSql_stop
+  ${SPARK_HOME}/sbin/stop-history-server.sh
   ;;
 "status")
   check_process thriftserver >/dev/null && echo "thriftserver 服务运行正常" || echo "thriftserver 服务运行异常"
