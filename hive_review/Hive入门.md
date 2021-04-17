@@ -6,6 +6,20 @@ HiveSQL入门，了解一下？😉
 
 - [HQL小练习](https://github.com/Dang-h/BigData/blob/master/Hive/Hive.md)
 - [一些设置](#一些设置)
+  - [Hive显示中文备注](#Hive显示中文备注)
+  - [Hive优化](#Hive优化)
+    - [设置reduce个数](#设置reduce个数)
+    - [设置Map数](#设置Map数)
+    - [合并小文件](#合并小文件)
+    - [压缩](#压缩)
+    - [向量优化器](#向量优化器)
+    - [cbo优化器](#优化器)
+    - [本地运行模式](#本地运行模式)
+    - [并行执行](#并行执行)
+    - [jvm重用](#重用)
+    - [map、reduce内存](#内存)
+    - [推测执行](#推测执行)
+    - [数据倾斜](#数据倾斜)
 - [查看一些信息](#查看一些信息)
 - [DDL](#DDL)
 - [DML](#DML)
@@ -54,16 +68,71 @@ ALTER TABLE INDEX_PARAMS
     MODIFY COLUMN PARAM_VALUE VARCHAR(4000) CHARACTER SET utf8;
 ```
 
-```sql
--- 以本地模式运行
-/*
- 当一个job满足如下条件才能真正使用本地模式：
- 1.job的输入数据大小必须小于参数：hive.exec.mode.local.auto.inputbytes.max(默认128MB)
- 2.job的map数必须小于参数：hive.exec.mode.local.auto.tasks.max(默认4)
- 3.job的reduce数必须为0或者1
- */
-SET hive.exec.mode.local.auto = TRUE;
+### Hive优化
+[Hive参数说明](https://cwiki.apache.org/confluence/display/Hive/Configuration+Properties)
 
+#### 设置reduce个数
+    SET mapred.reduce.tasks; -- 每个作业自动选择reduce个数（-1）,新版参数名:mapreduce.job.reduces; --每个spark shuffle阶段的reduce数量
+    SET hive.exec.reducers.bytes.per.reducer; -- 每个reducer处理的数据量（256MB）
+    SET hive.exec.reducers.max; -- 每个任务可开启的最大reduce数
+
+#### 设置Map数
+    SET mapred.max.split.size; -- 单个map最大数据处理量（256MB）,新版:mapreduce.input.fileinputformat.split.maxsize
+    SET mapred.min.split.size.per.node; -- 单个节点可处理的最小数据量（1B）,新版:mapreduce.input.fileinputformat.split.minsize.per.node
+    SET mapred.min.split.size.per.rack; -- 单个机架可处理的最小数据量（1B）,新版:mapreduce.input.fileinputformat.split.minsize.per.rack
+    SET hive.input.format; -- 使用小文件预聚合
+
+####  合并小文件
+    SET hive.merge.mapfiles; -- 开启map端输出合并（true）
+    SET hive.merge.mapredfiles; -- reduce端输出合并(false)
+    SET hive.merge.size.per.task; -- 作业结束后合并文件的大小（256MB）
+    SET hive.merge.smallfiles.avgsize; -- 当启用reduce端输出小文件合并时，小于（160MB）将会启动单独线程进行小文件合并
+
+####  压缩
+    SET io.compression.codecs;-- 查看支持的压缩格式
+    SET hive.exec.compress.output; -- 查看输出是否启用压缩
+    SET mapreduce.output.fileoutputformat.compress.codec; -- 查看输出结果使用的压缩算法
+
+####  向量优化器
+    SET hive.vectorized.execution.enabled; -- 向量化优化器
+    SET hive.vectorized.execution.reduce.enabled;
+
+#### 优化器
+    SET hive.cbo.enable; --(true)
+    SET hive.compute.query.using.stats; -- max,min,count(1)从元数据获取(true)
+    SET hive.fetch.task.conversion; -- fetch抓取模式(more)-“more”可以接受SELECT子句中的任何类型的表达式，包括udf。
+    SET hive.stats.fetch.column.stats; -- 列信息从元数据获取(false)
+    SET hive.stats.fetch.partition.stats; -- 开启fetch抓取，快速获取行数等信息(true)
+
+####  本地运行模式
+    SET hive.exec.mode.local.auto; -- 本地模式运行
+    SET hive.exec.mode.local.auto.inputbytes.max; -- 输入数据小于128M启用本地模式
+    SET hive.exec.mode.local.auto.input.files.max; -- map数小于这个值就启动本地模式
+
+####  并行执行
+    SET hive.exec.parallel; -- 如果是spark引擎，开始并行执行会影响效率
+    SET hive.exec.parallel.thread.number; -- 并行执行线程数
+
+####  重用
+    SET mapreduce.job.jvm.numtasks; -- 每个jvm可运行得任务数，默认为1
+    SET mapreduce.job.ubertask.enable;
+    SET mapreduce.job.ubertask.maxmaps;
+
+#### 内存
+    SET mapreduce.map.memory.mb; -- map可用内存
+    SET mapreduce.reduce.memory.mb; -- reduce可用内存
+    SET mapreduce.job.queuename; -- 任务执行的队列
+
+####  推测执行
+    SET hive.mapred.reduce.tasks.speculative.execution; -- 开启推测执行（true）
+    SET mapred.map.tasks.speculative.execution; -- 来时map端预测执行， 新版:set mapreduce.map.speculative;(true)
+    SET mapred.reduce.tasks.speculative.execution;
+
+#### 数据倾斜
+    SET hive.optimize.skewjoin; -- 是否开启数据倾斜优化(false)
+    set hive.optimize.skewjoin.compiletime; -- 是否创建一个单独的嘉华来处理key的数据倾斜(false)
+
+```sql
 -- 创建永久函数并与Java.class关联
 CREATE FUNCTION explode_json_array AS
     'custom.hive.udtf.ExplodeJSONArray' USING jar
