@@ -36,7 +36,7 @@ case $1 in
   hive_start
   ;;
 "status")
-  check_process HiveServer2 10000  && echo "HiveServer2 服务运行正常" || echo "HiveServer2 服务运行异常"
+  check_process HiveServer2 10000 && echo "HiveServer2 服务运行正常" || echo "HiveServer2 服务运行异常"
   ;;
 *)
   echo Invalid Args!
