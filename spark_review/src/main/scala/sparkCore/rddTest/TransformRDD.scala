@@ -23,7 +23,7 @@ object TransformRDD {
 		// TODO mapPartitions:以分区为单位处理数据,处理数据时会长时间占用内存，内存太小数据量太大容易溢出
 		// 获取每个数据分区的最大值
 		val valueList: RDD[Int] = sc.makeRDD(List(1, 2, 3, 4), 2)
-		val mapP: RDD[Int] = valueList.mapPartitions(iter => List(iter.max).iterator)
+		val mapP: RDD[Int] = valueList.mapPartitions((itr: Iterator[Int]) => List(itr.max).iterator)
 		// mapP.collect().foreach(println)
 
 		// TODO mapPartitionsWithIndex:在以分区为单位处理数据时可获取当前分区序号
@@ -144,33 +144,30 @@ object TransformRDD {
 			("b", 4), ("b", 5), ("a", 6)
 		), 2)
 		//val rdd: RDD[(String, Int)] = sc.makeRDD(List(("a", 1), ("a", 2), ("a", 3), ("a", 4)), 2)
-		val aggreRdd: RDD[(String, Int)] = rdd.aggregateByKey(0)(
+		val aggreRdd = rdd.aggregateByKey(0)(
 			(x, y) => {
-				println(x, y)
+				println("①: " + x, y)
 				math.max(x, y)
 			}, //分区内计算规则，分区内取出value的最大值
 			(x, y) => {
-				println()
-				println(x, y)
+				println("②: " + x, y)
 				x + y
 			} // 分区间计算规则，分区间对每个分区取出的最大值相加
 		)
-		//aggreRdd.collect.foreach(println)
+		aggreRdd.collect.foreach(println)
 		//获取相同key的数据的平均值 => (a, 3),(b, 4)
-		val aggreRDD: RDD[(String, Int)] = rdd.aggregateByKey((0, 0))(
+		val aggreRDD = rdd.aggregateByKey((0, 0))(
 			(t, v) => {
-				println(t, v)
+				println("①: " + t, v)
 				(t._1 + v, t._2 + 1)
 			},
 			(t1, t2) => {
-				println()
-				println(t1, t2)
+				println("②: " + t1, t2)
 				(t1._1 + t2._1, t1._2 + t2._2)
 			}
 		).mapValues {
 			case (num, count) => {
-				println()
-				println(num, count)
+				println("③: " + num, count)
 				num / count
 			}
 		}
@@ -183,15 +180,17 @@ object TransformRDD {
 		// TODO combineByKey：将数据根据不同规则进行分区内和分区间计算，允许返回值类型和初始值类型不同；相同key的第一条数据进行函数处理转换结构
 		// 三个参数：①将相同key的第一个参数进行结构转换②分区内计算规则③分区间计算规则
 		// 将数据 List(("a", 88), ("b", 95), ("a", 91), ("b", 93), ("a", 95), ("b", 98))求每个 key 的平均值
-		val combineByKeyRdd: RDD[(String, (Int, Int))] = rdd.combineByKey(
-			v => (v, 1),
+		val combineByKeyRdd = rdd.combineByKey(
+			v => {
+				println("①: " + v, 1)
+				(v, 1)
+			},
 			(t: (Int, Int), v) => {
-				println(t, v)
+				println("②: " + t, v)
 				(t._1 + v, t._2 + 1)
 			},
 			(t1: (Int, Int), t2: (Int, Int)) => {
-				println(t1, t2)
-				println()
+				println("③: " + t1, t2)
 				(t1._1 + t2._1, t1._2 + t2._2)
 			}
 		)
@@ -201,14 +200,16 @@ object TransformRDD {
 		//rdd.reduceByKey(_ + _).collect.foreach(println)
 		//rdd.aggregateByKey(0)(_+_, _ + _).collect.foreach(println)
 		//rdd.foldByKey(0)(_ + _).collect.foreach(println)
-		rdd.combineByKey(v => v, (x: Int, y) => {
-			println(x, y)
-			x + y
-		}, (x: Int, y: Int) => {
-			println()
-			println(x, y)
-			x + y
-		}) //.collect.foreach(println)
+		rdd.combineByKey(
+			v => v,
+			(x: Int, y) => {
+				println(x, y)
+				x + y
+			},
+			(x: Int, y: Int) => {
+				println(x, y)
+				x + y
+			}) //.collect.foreach(println)
 
 		// TODO join：将两个不同的数据源相同的key的value连接在一起组成元组，如果相同key很多会出现笛卡尔积
 
