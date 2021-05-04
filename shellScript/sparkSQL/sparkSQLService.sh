@@ -7,6 +7,7 @@ if [ $# -lt 1 ]; then
   exit
 fi
 
+# shellcheck disable=SC2112
 function check_process() {
   # 查进程号
   pid=$(ps -ef 2>/dev/null | grep -v grep | grep -i "$1" | awk '{print$2}')
@@ -18,6 +19,7 @@ function check_process() {
   [ -z "$pid" ] && return 1 || return 0
 }
 
+# shellcheck disable=SC2112
 function sparkSql_start() {
 
   server2pid=$(check_process thriftserver)
@@ -27,6 +29,7 @@ function sparkSql_start() {
 
 }
 
+# shellcheck disable=SC2112
 function sparkSql_stop() {
 
   server2pid=$(check_process thriftserver)

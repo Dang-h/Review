@@ -1,10 +1,12 @@
 package sparkCore.rddTest
 
+
 import org.apache.spark.rdd.RDD
-import org.apache.spark.{SparkConf, SparkContext}
+import org.apache.spark.{HashPartitioner, SparkConf, SparkContext}
 
 import java.text.SimpleDateFormat
 import java.util.Date
+
 
 object TransformRDD {
 	def main(args: Array[String]): Unit = {
@@ -18,13 +20,16 @@ object TransformRDD {
 			val datas: Array[String] = line.split(" ")
 			datas(6)
 		})
-		// pathOfURL.collect().foreach(println)
+		//		 pathOfURL.collect().take(10).foreach(println)
+		apacheLog
 
 		// TODO mapPartitions:以分区为单位处理数据,处理数据时会长时间占用内存，内存太小数据量太大容易溢出
 		// 获取每个数据分区的最大值
 		val valueList: RDD[Int] = sc.makeRDD(List(1, 2, 3, 4), 2)
 		val mapP: RDD[Int] = valueList.mapPartitions((itr: Iterator[Int]) => List(itr.max).iterator)
 		// mapP.collect().foreach(println)
+
+		def doubleMap(a: Int) = (a, a * 2)
 
 		// TODO mapPartitionsWithIndex:在以分区为单位处理数据时可获取当前分区序号
 		// 获取第二个数据分区的数据
@@ -89,6 +94,24 @@ object TransformRDD {
 		//group4H.collect.foreach(println)
 		val group4First: RDD[(Char, String)] = listRdd.groupBy(_.charAt(0)).map { case (c, iter) => (c, iter.mkString(",")) }
 		//group4First.collect.foreach(println)
+
+		// TODO groupBy的join中的优化使用
+		val rdd111 = sc.parallelize(Array((1, 1), (1, 2), (2, 1), (3, 1), (1, 2), (2, 1), (3, 1))).partitionBy(new
+			HashPartitioner(2)).persist()
+		val rdd211 = sc.parallelize(Array((1, 'x'), (2, 'y'), (2, 'z'), (4, 'w'), (2, 'y'), (2, 'z'), (4, 'w')))
+
+		val rdd111_1 = sc.parallelize(Array((1, 1), (1, 2), (2, 1), (3, 1), (1, 2), (2, 1), (3, 1)))
+		val rdd211_1 = sc.parallelize(Array((1, 'x'), (2, 'y'), (2, 'z'), (4, 'w'), (2, 'y'), (2, 'z'), (4, 'w')))
+
+		/** 有优化效果 ,rdd1 不再需要 shuffle */
+		rdd111.join(rdd211).collect()
+		rdd111_1.join(rdd211_1).collect()
+
+		/** 有优化效果 ,rdd1 不再需要 shuffle */
+		rdd111.join(rdd211, new HashPartitioner(2))
+
+		/** 无优化效果 ,rdd1 需要再次 shuffle */
+		rdd111.join(rdd211, new HashPartitioner(3))
 
 		// TODO filter：根据指定规则进行过滤，符合规则保留，分区不变，但分区内数据不均匀，易发生数据倾斜
 		// 从服务器日志数据 apache.log 中获取 2015 年 5 月 17 日的请求路径
@@ -173,6 +196,16 @@ object TransformRDD {
 		}
 		//aggreRDD.collect.foreach(println)
 
+		// TODO aggregateByKey代替groupByKey
+		val rddList = sc.makeRDD(List(("a", 88), ("b", 95), ("a", 91), ("b", 93), ("a", 95), ("b", 98)))
+
+		//		rddList.groupByKey().collect()
+		rddList.sample(false, 0.1).countByKey().foreach(println)
+
+		rddList.aggregateByKey(List[Int]())((i: List[Int], j: Int) => j :: i,
+			(resultList: List[Int], iList: List[Int]) => iList ::: resultList) //.collect()
+
+
 		// TODO foldByKey:分区内和分区间计算规则相同；初始值和第一个key的value进行分区内的数据操作
 		val foldByKeyRdd: RDD[(String, Int)] = rdd.foldByKey(0)(_ + _)
 		//foldByKeyRdd.collect.foreach(println)
@@ -216,9 +249,50 @@ object TransformRDD {
 		// TODO leftOuterJoin：类似HQL里的左连接
 
 		// TODO cogroup：connect + group
-		val rdd1 = sc.makeRDD(List(("a", 1), ("b", 2), ("c", 3)))
-		val rdd2 = sc.makeRDD(List(("c", 1), ("b", 2), ("c", 3)))
-		//rdd1.cogroup(rdd2).map(iter => (iter._1, (iter._2._1.sum+iter._2._2.sum))).collect.foreach(println)
+		//		val rdd1 = sc.makeRDD(List(("a", 1), ("b", 2), ("c", 3)))
+		//		val rdd2 = sc.makeRDD(List(("c", 1), ("b", 2), ("c", 3)))
+		val rdd1 = sc.parallelize(Array((1, 1), (1, 2), (2, 1), (3, 1), (1, 2), (2, 1), (3, 1)))
+		val rdd2 = sc.parallelize(Array((1, 'x'), (2, 'y'), (3, 'z'), (4, 'w')))
+		val value7: RDD[(Int, (Int, Char))] = rdd1.join(rdd2)
+
+		val rdd2Broadcast = sc.broadcast(rdd2.collectAsMap()).value
+		val rdd1Map: RDD[(Int, (Int, Int))] = rdd1.map(data => (data._1, data))
+
+		rdd1Map.mapPartitions(partitions => {
+			for ((k, v) <- partitions if rdd2Broadcast.contains(k))
+				yield (k, (v._2, rdd2Broadcast.getOrElse(k, "")))
+		}) //.collect().foreach(println)
+
+
+		rdd1.cogroup(rdd2).map(iter => (iter._1, (iter._2._1.sum + iter._2._2.sum))).collect.foreach(println)
+
+		// TODO 使用Broadcast变量与map类算子实现join操作，进而完全规避掉shuffle类的操作
+		val smallRDD = sc.parallelize(Array(
+			("1", "zhangsan"),
+			("2", "lisi"),
+			("3", "wangwu")
+		)).collectAsMap()
+
+		val smallBroadCast = sc.broadcast(smallRDD)
+
+		val bigRDD = sc.parallelize(Array(
+			("1", "school1", "male"),
+			("2", "school2", "female"),
+			("3", "school3", "male"),
+			("4", "school4", "male"),
+			("5", "school5", "female")
+		)).map(x => (x._1, x))
+
+		val broadCastValue: collection.Map[String, String] = smallBroadCast.value
+
+		bigRDD.mapPartitions(partitions => {
+
+			for ((key, value) <- partitions
+				 if (broadCastValue.contains(key)))
+				yield (key, broadCastValue.getOrElse(key, ""), value._2, value._3)
+
+		}) //.collect().foreach(println)
+
 
 		sc.stop()
 	}
