@@ -1,9 +1,11 @@
 package interceptor;
 
+import com.alibaba.fastjson.JSONObject;
 import org.apache.flume.Context;
 import org.apache.flume.Event;
 import org.apache.flume.interceptor.Interceptor;
 
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -20,9 +22,10 @@ public class TimeAddInterceptor implements Interceptor {
 	@Override
 	public Event intercept(Event event) {
 		Map<String, String> headers = event.getHeaders();
-		String ts = "" + System.currentTimeMillis();
-
+		String log = new String(event.getBody(), StandardCharsets.UTF_8);
+		String ts = JSONObject.parseObject(log).getString("ts");
 		headers.put("timestamp", ts);
+
 		return event;
 	}
 
