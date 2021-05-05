@@ -77,3 +77,49 @@ case $1 in
   done
 } ;;
 esac
+
+#======================================================================================================
+
+#! /bin/sh
+host_list="hadoop100 hadoop101 hadoop102"
+
+case $1 in
+"start"){
+        for i in $host_list
+        do
+                echo " ========= 启动 $i 采集flume ========="
+                ssh $i "source /etc/profile;
+                nohup $FLUME_HOME/bin/flume-ng agent --conf-file $FLUME_HOME/myJob/log-flume-kafka.conf --name a1
+                -Dflume.root.logger=INFO,LOGFILE > $FLUME_HOME/logs/serverLog/log-flume-kafka.log 2>&1 &"
+                echo -- Done ---
+        done
+};;
+"stop"){
+        for i in $host_list
+        do
+                echo " ========= 停止 $i 采集flume ========="
+                ssh $i "ps -ef | grep log-flume-kafka | grep -v grep |awk  '{print \$2}' | xargs kill -9 "
+                echo --- Done ---
+        done
+
+};;
+esac
+
+
+#!/bin/sh
+
+dateTime=$(date "+%Y-%m-%d")
+
+if [ $1 ]; then
+  dateTime=$1
+fi
+
+function make_log() {
+  cmd="cd /opt/software/Mock/log;
+		   sed -i '/<property name="DATE" value=.*/c<property name=\"DATE\" value=\"${dateTime}\" \/>' logback.xml;
+		   "
+
+   eval $cmd
+}
+
+make_log
