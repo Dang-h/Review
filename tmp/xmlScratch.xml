@@ -308,6 +308,74 @@
         </root>
     </configuration>
 
+    <property>
+        <name>yarn.scheduler.capacity.root.hive.capacity</name>
+        <value>60</value>
+        <description>
+            hive 队列的容量为 60%
+        </description>
+    </property>
+
+    <property>
+        <name>yarn.scheduler.capacity.root.hive.user-limit-factor</name>
+        <value>1</value>
+        <description>
+            一个用户最多能够获取该队列资源容量的比例，取值 0-1
+        </description>
+    </property>
+    <property>
+        <name>yarn.scheduler.capacity.root.hive.maximum-capacity</name>
+        <value>80</value>
+        <description>
+            hive 队列的最大容量（自己队列资源不够，可以使用其他队列资源上限）
+        </description>
+    </property>
+    <property>
+        <name>yarn.scheduler.capacity.root.hive.state</name>
+        <value>RUNNING</value>
+        <description>
+            开启 hive 队列运行，不设置队列不能使用
+        </description>
+    </property>
+
+    <property>
+        <name>yarn.scheduler.capacity.root.hive.acl_submit_applications</name>
+        <value>*</value>
+        <description>
+            访问控制，控制谁可以将任务提交到该队列,*表示任何人
+        </description>
+    </property>
+    <property>
+        <name>yarn.scheduler.capacity.root.hive.acl_administer_queue</name>
+        <value>*</value>
+        <description>
+            访问控制，控制谁可以管理(包括提交和取消)该队列的任务，*表示任何人
+        </description>
+    </property>
+    <property>
+        <name>yarn.scheduler.capacity.root.hive.acl_application_max_priority</name>
+        <value>*</value>
+        <description>
+            指定哪个用户可以提交配置任务优先级
+        </description>
+    </property>
+    <property>
+        <name>yarn.scheduler.capacity.root.hive.maximum-application-
+            lifetime</name>
+        <value>-1</value>
+        <description>
+            hive 队列中任务的最大生命时长，以秒为单位。任何小于或等于零的值将被视为禁用。
+        </description>
+    </property>
+    <property>
+        <name>yarn.scheduler.capacity.root.hive.default-application-
+            lifetime</name>
+        <value>-1</value>
+        <description>
+            hive 队列中任务的默认生命时长，以秒为单位。任何小于或等于零的值将被视为禁用。
+        </description>
+    </property>
+
 </configuration>
 
 
