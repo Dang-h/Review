@@ -64,13 +64,13 @@ public class ExplodeJsonArray extends GenericUDTF {
 		String datas = objects[0].toString();
 		//遍历json数组
 		JSONArray jsonArray = new JSONArray(datas);
-
+//		StringBuilder stringBuilder = new StringBuilder(1);
+		String[] stringBuilder = new String[1];
 		for (int i = 0; i < jsonArray.length(); i++) {
-			String[] result = new String[1];
-			result[0] = jsonArray.getString(i);
+			stringBuilder[0] = jsonArray.getString(i);
 
 			// 使用forward输出数据
-			forward(result);
+			forward(stringBuilder);
 		}
 	}
 
