@@ -1,5 +1,7 @@
 package array;
 
+import org.junit.jupiter.api.Test;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -71,7 +73,7 @@ public class TestArray {
 //		System.out.print("data[" + j + "] " + data[j] + " " + "data[" + j + "] " + data[j] + " ");
 	}
 
-	
+
 	static void subSort(int[] data, int start, int end) {
 		if (start < end) {
 			int base = data[start];
@@ -96,6 +98,27 @@ public class TestArray {
 			subSort(data, start, high - 1);//递归调用
 			subSort(data, high + 1, end);
 		}
+	}
+
+	@Test
+	public void testString() {
+		StringBuilder sb = new StringBuilder(16);
+		for (int i = 0; i < 10; i++) {
+			sb.append(i);
+			forward(sb);
+		}
+
+//		System.out.println("sb = " + sb);
+
+		String[] result = new String[1];
+		for (int i = 0; i < 10; i++) {
+			result[0] = "" + i;
+			forward(result);
+		}
+	}
+
+	private void forward(Object result) {
+		System.out.println("result = " + result);
 	}
 }
 
