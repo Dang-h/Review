@@ -1856,7 +1856,74 @@ SELECT '2020-06-17'                             AS              stat_date,
 FROM dwt_uv_topic
 WHERE login_date_first IN (DATE_ADD('2020-06-17', -1), DATE_ADD('2020-06-17', -2), DATE_ADD('2020-06-17', -3))
 GROUP BY login_date_first;
+```
+
+#### 7天连续3天活跃
+```sql
+CREATE TABLE dws_uv_detail_daycount
+(
+    mid_id INT,
+    dt     STRING
+);
+
+INSERT INTO dws_uv_detail_daycount
+VALUES (6, '2021-05-02'), -- 间断性连续3天活跃
+       (6, '2021-05-03'),
+       (6, '2021-05-04'),
+       (6, '2021-05-06'),
+       (6, '2021-05-07'),
+       (6, '2021-05-08'),
+
+       (5, '2021-05-03'), -- 连续活跃6天
+       (5, '2021-05-04'),
+       (5, '2021-05-05'),
+       (5, '2021-05-06'),
+       (5, '2021-05-07'),
+       (5, '2021-05-08'),
 
 
+       (1, '2021-05-02'), -- 连续5天活跃
+       (1, '2021-05-03'),
+       (1, '2021-05-04'),
+       (1, '2021-05-05'),
+       (1, '2021-05-06'),
+
+       (2, '2021-05-03'), -- 连续3天活跃
+       (2, '2021-05-05'),
+       (2, '2021-05-06'),
+       (2, '2021-05-07'),
+
+       (3, '2021-05-03'), -- 连续3天活跃
+       (3, '2021-05-04'),
+       (3, '2021-05-05'),
+
+       (4, '2021-05-03'), -- 连续2天活跃
+       (4, '2021-05-05'),
+       (4, '2021-05-07'),
+       (4, '2021-05-08');
+
+
+SELECT '2021-05-08'                                          stat_date,
+       CONCAT(DATE_ADD('2021-05-08', -6), '_', '2021-05-08') wk_dt,
+       COUNT(*)                                              cnt
+FROM (
+         (
+                  SELECT mid_id
+                  FROM (
+                           SELECT mid_id,
+                                  DATE_SUB(dt, rank) date_dif
+                           FROM ( -- 最近7天活跃的用户，并给多次活跃的用户打上标记
+                                    SELECT mid_id,
+                                           dt,
+                                           RANK() OVER (PARTITION BY mid_id ORDER BY dt) rank
+                                    FROM dws_uv_detail_daycount
+                                    WHERE dt >= DATE_ADD('2021-05-08', -6)
+                                      AND dt <= '2021-05-08'
+                                ) t1
+                       ) t2
+                  GROUP BY mid_id, date_dif
+                  HAVING COUNT(*) >= 3
+              ) t3
+     ) t4;
 ```
 
