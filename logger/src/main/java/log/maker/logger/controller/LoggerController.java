@@ -4,6 +4,7 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -18,19 +19,26 @@ public class LoggerController {
 	@Autowired
 	KafkaTemplate kafkaTemplate;
 
+	@Value("${kafka.topic1}")
+	private String topic1;
+
+	@Value("${kafka.topic2}")
+	private String topic2;
+
 	@RequestMapping("/app_log")
 	public String appLog(@RequestBody String mockLog) {
 //		System.out.println(mockLog);
 		log.info(mockLog);
+
 
 //		 根据日志类型发送到不同topic中
 		JSONObject jsonObject = JSON.parseObject(mockLog);
 		String startJson = jsonObject.getString("start");
 
 		if (startJson != null) {
-			kafkaTemplate.send("start", mockLog);
+			kafkaTemplate.send(topic1, mockLog);
 		} else {
-			kafkaTemplate.send("event", mockLog);
+			kafkaTemplate.send(topic2, mockLog);
 		}
 
 		return "success!";
