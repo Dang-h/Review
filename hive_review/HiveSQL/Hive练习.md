@@ -16,6 +16,11 @@
 - [所有用户和活跃用户](#所有用户和活跃用户)
 - [图书馆的故事](#图书馆的故事)
 - [窗口函数案例](#窗口函数案例)
+    - [avg(),sum()](#第三季度每个代理商的移动平均收入和总收入)
+    - [first_value](#客户首次购买后多少天才进行下一次购买)
+    - [lag](#最近一次出售的最高订单金额)
+    - [cume_dist](#8月和9月每个订单的收入百分比)
+
 
 ---
 
@@ -1052,4 +1057,101 @@ FROM (SELECT sale_user,
     GROUP BY sale_user, DATE_FORMAT(dt, 'yyyy-MM')) t1
 ```
 
+```sql
 
+CREATE TABLE `orders2` (
+`order_num` String COMMENT '订单号',
+`order_amount` DECIMAL ( 12, 2 ) COMMENT '订单金额',
+`advance_amount` DECIMAL ( 12, 2 ) COMMENT '预付款',
+`order_date` string COMMENT '订单日期',
+`cust_code` string COMMENT '客户',
+`agent_code` string COMMENT '代理商'
+);
+INSERT INTO orders2 VALUES('200100', '1000.00', '600.00', '2020-08-01', 'C00013', 'A003'),
+('200110', '3000.00', '500.00', '2020-04-15', 'C00019', 'A010'),
+('200107', '4500.00', '900.00', '2020-08-30', 'C00007', 'A010'),
+('200112', '2000.00', '400.00', '2020-05-30', 'C00016', 'A007'),
+('200113', '4000.00', '600.00', '2020-06-10', 'C00022', 'A002'),
+('200102', '2000.00', '300.00', '2020-05-25', 'C00012', 'A012'),
+('200114', '3500.00', '2000.00', '2020-08-15', 'C00002','A008'),
+('200122', '2500.00', '400.00', '2020-09-16', 'C00003', 'A004'),
+('200118', '500.00', '100.00', '2020-07-20', 'C00023', 'A006'),
+('200119', '4000.00', '700.00', '2020-09-16', 'C00007', 'A010'),
+('200121', '1500.00', '600.00', '2020-09-23', 'C00008', 'A004'),
+('200130', '2500.00', '400.00', '2020-07-30', 'C00025', 'A011'),
+('200134', '4200.00', '1800.00', '2020-09-25', 'C00004','A005'),
+('200108', '4000.00', '600.00', '2020-02-15', 'C00008', 'A004'),
+('200103', '1500.00', '700.00', '2020-05-15', 'C00021', 'A005'),
+('200105', '2500.00', '500.00', '2020-07-18', 'C00025', 'A011'),
+('200109', '3500.00', '800.00', '2020-07-30', 'C00011', 'A010'),
+('200101', '3000.00', '1000.00', '2020-07-15', 'C00001','A008'),
+('200111', '1000.00', '300.00', '2020-07-10', 'C00020', 'A008'),
+('200104', '1500.00', '500.00', '2020-03-13', 'C00006', 'A004'),
+('200106', '2500.00', '700.00', '2020-04-20', 'C00005', 'A002'),
+('200125', '2000.00', '600.00', '2020-10-01', 'C00018', 'A005'),
+('200117', '800.00', '200.00', '2020-10-20', 'C00014', 'A001'),
+('200123', '500.00', '100.00', '2020-09-16', 'C00022', 'A002'),
+('200120', '500.00', '100.00', '2020-07-20', 'C00009', 'A002'),
+('200116', '500.00', '100.00', '2020-07-13', 'C00010', 'A009'),
+('200124', '500.00', '100.00', '2020-06-20', 'C00017', 'A007'),
+('200126', '500.00', '100.00', '2020-06-24', 'C00022', 'A002'),
+('200129', '2500.00', '500.00', '2020-07-20', 'C00024', 'A006'),
+('200127', '2500.00', '400.00', '2020-07-20', 'C00015', 'A003'),
+('200128', '3500.00', '1500.00', '2020-07-20', 'C00009','A002'),
+('200135', '2000.00', '800.00', '2020-09-16', 'C00007', 'A010'),
+('200131', '900.00', '150.00', '2020-08-26', 'C00012', 'A012'),
+('200133', '1200.00', '400.00', '2020-06-29', 'C00009', 'A002');
+```
+### 第三季度每个代理商的移动平均收入和总收入
+```sql
+-- 第三季度每个代理商的移动平均收入和总收入
+select agent_code,
+order_date,
+avg(order_amount) OVER (PARTITION BY agent_code order by order_date) avg_rev,
+sum(order_amount) OVER (PARTITION BY agent_code order by order_date) total_rev
+from orders2
+where order_date >= '2020-07-01' and order_date <= '2020-09-30';
+```
+
+### 客户首次购买后多少天才进行下一次购买
+```sql
+-- 客户首次购买后多少天才进行下一次购买
+select agent_code,
+order_date,
+datediff(order_date,first_value(order_date) over(partition by agent_code order by order_date)) order_gap
+from orders2
+order by agent_code, order_gap;
+```
+
+### 最近一次出售的最高订单金额
+```sql
+-- 代理商最近一次出售的最高订单金额是多少？
+SELECT agent_code, order_date,order_amount,
+lag(order_amount, 1) over(partition by agent_code order BY order_amount DESC ) last_highest_amount
+from orders2
+order by agent_code, order_amount DESC ;
+```
+
+### 每月第二高的订单金额
+```sql
+-- 每月第二高的订单金额是多少？
+select agent_code, order_date,order_amount,order_month
+from (SELECT agent_code, order_date,order_amount,date_format(order_date, 'yyyy-MM') order_month,
+dense_rank() OVER (PARTITION BY date_format(order_date,'yyyy-MM') ORDER BY order_amount DESC ) order_rank
+from orders2)t1
+where order_rank = 2
+order by order_date;
+```
+
+### 8月和9月每个订单的收入百分比
+```sql
+-- 8月和9月每个订单的收入百分比
+-- 8月份收入小于等于1000的订单量占总订单量的50%
+
+SELECT date_format(order_date, 'yyyy-MM') order_month,
+agent_code,
+order_amount,
+round(cume_dist() OVER (PARTITION BY date_format(order_date, 'yyyy-MM') order by order_amount),2)
+from orders2
+where order_date>= '2020-08-01' and order_date <= '2020-09-30';
+```
