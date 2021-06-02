@@ -22,6 +22,13 @@ HiveSQL入门，了解一下？😉
         - [数据倾斜](#数据倾斜)
 - [查看一些信息](#查看一些信息)
 - [DDL](#DDL)
+    - [创建数据库](#创建数据库)
+    - [创建表](#创建表)
+        - [普通表](#普通表)
+        - [外部表](#外部表)
+        - [分区表](#分区表)
+    - [数据导入](#数据导入)
+    - [修改](#修改)
 - [DML](#DML)
 - [查询小练习](#查询小练习)
     - [计算emp表每个部门的平均工资](#计算emp表每个部门的平均工资)
@@ -47,6 +54,8 @@ HiveSQL入门，了解一下？😉
 - [常用函数](#常用函数)
     - [窗口函数](#窗口函数)
     - [解析json数组](src/main/java/udtf/ExplodeJsonArray.java)
+    - [拆分转换(行转列)](#行转列)
+    - [分组合并(列转行)](#列转行)
 
 ---
 
@@ -266,13 +275,16 @@ DESC DATABASE EXTENDED db_hive;
 
 ## DDL
 
+### 创建数据库
 ```sql
 -- 创建数据库,数据库在HDFS上的默认存储路径是/user/hive/warehouse/*.db。
 CREATE DATABASE IF NOT EXISTS db_hive;
 
 -- 创建数据库,指定HDFS上存放位置
 CREATE DATABASE IF NOT EXISTS db_hive2 LOCATION '/db_hive2.db';
-
+```
+### 创建表
+```sql
 -- 创建表
 CREATE
 [EXTERNAL] TABLE [IF NOT EXISTS] TABLE_NAME
@@ -314,7 +326,9 @@ CREATE
 （10）AS：后跟查询语句，根据查询结果创建表。
 （11）LIKE：允许用户复制现有的表结构，但是不复制数据。
  */
-
+```
+#### 普通表
+```sql
 -- 创建普通表
 CREATE TABLE IF NOT EXISTS user_info
 (
@@ -341,7 +355,19 @@ FROM student;
 -- 根据已存在的表结构创建表
 CREATE TABLE IF NOT EXISTS student3 LIKE student;
 
-
+-- 跳过指定行
+CREATE TABLE movies
+(
+    movieId  STRING,
+    title    STRING,
+    category STRING
+)
+    ROW FORMAT DELIMITED FIELDS TERMINATED BY ','
+    STORED AS TEXTFILE
+    TBLPROPERTIES ("skip.header.line.count" = "1");
+```
+#### 外部表
+```sql
 --  创建外部表
 CREATE
 EXTERNAL TABLE stu_external
@@ -362,8 +388,9 @@ EXTERNAL TABLE stu_external
 | Table Type:                   | EXTERNAL_TABLE                                              | NULL                  |
 +-------------------------------+-------------------------------------------------------------+-----------------------+--+
  */
-
-
+```
+#### 分区表
+```sql
 -- 创建分区表,Hive中的分区就是分目录,把一个大的数据集根据业务需要分割成小的数据集
 CREATE TABLE dept_partition
 (
@@ -390,7 +417,10 @@ CREATE TABLE dept_partition
 |                               | NULL                                                                 | NULL                  |
 | month                         | string                                                               |                       |
  */
+```
 
+### 数据导入
+```sql
 -- 数据导入
 LOAD DATA [LOCAL] INPATH '/data/hive/student.txt' [OVERWRITE] INTO TABLE student [PARTITION (partCol1=cal1,...)]
 /*
@@ -465,8 +495,9 @@ FROM t_visit_video;
 | 王五                      | 盗梦空间                 | 2019-07-10         |
 +-------------------------+---------------------------+--------------------+--+
 */
-
-
+```
+### 修改
+```sql
 --  修改数据库
 ALTER DATABASE db_hive SET DBPROPERTIES ('createtime' = '20190628');
 
@@ -1928,3 +1959,51 @@ FROM (
      ) t4;
 ```
 
+### 行转列
+    1,Toy Story (1995),Adventure|Animation|Children|Comedy|Fantasy
+    lateral view explore(Array) 
+
+|id|name|category|
+|---|---|---|
+|1|Toy Story (1995)|Adventure&#124;Animation&#124;Children&#124;Comedy&#124;Fantasy|
+
+|id|name|category|
+|---|---|---|
+|1|Toy Story (1995)|Adventure|
+|1|Toy Story (1995)|Animation|
+|1|Toy Story (1995)|Children|
+|1|Toy Story (1995)|Comedy|
+|1|Toy Story (1995)|Fantasy|
+
+```sql
+SELECT movieId, title, category_name
+FROM movies
+LATERAL VIEW EXPLODE(split(category, "\\|")) tmp AS category_name;
+
+```
+
+### 行转列
+
+|category_name|rating|avg_rating|
+|---|---|---|
+|Film-Noir|0.5&#124;3.5&#124;5.0&#124;2.5&#124;3.0&#124;2.0&#124;4.5&#124;1.5&#124;1.0&#124;4.0|3.93|
+
+```sql
+WITH category_tmp AS (
+    SELECT movieId, title, category_name
+    FROM movies
+             LATERAL VIEW EXPLODE(SPLIT(category, "\\|")) tmp AS category_name
+    LIMIT 10
+),
+     rating_tmp AS (SELECT movieId, rating
+                    FROM rating
+         LIMIT 10
+     )
+SELECT m.category_name,
+       CONCAT_WS('|', COLLECT_SET(r.rating))  rating,
+       ROUND(AVG(rating), 2)                  avg_rating
+FROM category_tmp        m
+         JOIN rating_tmp r
+              ON m.movieId = r.movieId
+GROUP BY m.category_name;
+```
