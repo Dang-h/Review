@@ -8,3 +8,4 @@
 /.idea
 /data/ratings.csv
 */target/
+/sparkCheckPoint/
