@@ -1,0 +1,85 @@
+# MySQL导出到HDFS（从mysql的sparkStreaming库中将表user_info全量导入到HDFS的/test_sqoop/mysql_output中分隔符时\t）
+sqoop import \
+--connect jdbc:mysql://hadoop100:3306/sparkStreaming_mall \
+--username root \
+--password-file file:///home/hadoop/temp/sqoop.pwd \
+--table user_info \
+--target-dir /test_sqoop/mysql_output \
+--delete-target-dir \
+--num-mappers 4 \
+--fields-terminated-by "\t"
+
+# 查询导入HDFS指定目录（导入Hive,分两步，第一步将数据导入到HDFS，第二部将数据load到已创建的Hive表。或者直接将数据导入到表对应的目录）
+sqoop import \
+--connect jdbc:mysql://hadoop100:3306/sparkStreaming_mall \
+--username root \
+--password-file file:///home/hadoop/temp/sqoop.pwd \
+--target-dir /user/hive_on_spark/warehouse/test.db/test_user_info \
+--delete-target-dir \
+--num-mappers 2 \
+--fields-terminated-by "\t" \
+--split-by id \
+--query 'SELECT id, login_name, nick_name, name, phone_num, email, birthday from user_info where 1=1 and $CONDITIONS' \
+--null-string '\\N' \
+--null-non-string '\\N'
+
+# 导出指定列数据到HDFS
+sqoop import \
+--connect jdbc:mysql://hadoop100:3306/sparkStreaming_mall \
+--username root \
+--password-file file:///home/hadoop/temp/sqoop.pwd \
+--table user_info \
+--target-dir /test_sqoop/mysql_output \
+--delete-target-dir \
+--num-mappers 2 \
+--fields-terminated-by "\t" \
+--columns nick_name,name,email
+
+
+
+# MySQL导出到Hive，自动创建表
+sqoop import \
+--connect jdbc:mysql://hadoop100:3306/sparkStreaming_mall \
+--username root \
+--password-file file:///home/hadoop/temp/sqoop.pwd \
+--table user_info \
+--fields-terminated-by "\t" \
+--lines-terminated-by "\n" \
+--hive-import \
+--hive-overwrite \
+--create-hive-table \
+--hive-database test \
+--hive-table c_user_info \
+--delete-target-dir \
+-m 1 \
+--null-string '\\N' \
+--null-non-string '\\N'
+
+
+# MySQL导出到HBase
+sqoop import \
+--connect jdbc:mysql://hadoop100:3306/sparkStreaming_mall \
+--username root \
+--password-file file:///home/hadoop/temp/sqoop.pwd \
+--table user_info \
+--direct \
+--columns "id,nick_name,name,email" \
+--column-family "info" \
+--hbase-create-table \
+--hbase-row-key "id" \
+--hbase-table "hbase_company" \
+--num-mappers 1 \
+--split-by id
+
+sqoop import \
+-D sqoop.hbase.add.row.key=true \
+--connect jdbc:mysql://hadoop100:3306/sparkStreaming_mall \
+--username root \
+--password-file file:///home/hadoop/temp/sqoop.pwd \
+--table user_info \
+--hbase-create-table \
+--hbase-table user_info \
+--column-family detail \
+--hbase-row-key id \
+--num-mappers 2
+

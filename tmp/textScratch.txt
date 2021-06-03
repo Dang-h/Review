@@ -1,0 +1,17 @@
+Maxwell读取数据库历史数据
+bin/maxwell-bootstrap
+--user maxwell
+--password maxwell
+--host hadoop100
+--database sparkStreaming_mall
+--table base_province
+--client_id maxwell_1
+
+
+
+create table gmall_base_trademark (id varchar primary key ,tm_name varchar);
+create table gmall_base_category3 (id varchar primary key ,name varchar ,category2_id varchar);
+create table gmall_spu_info (id varchar primary key ,spu_name varchar);
+create table gmall_sku_info (id varchar primary key , spu_id varchar, price varchar, sku_name varchar, tm_id
+varchar, category3_id varchar, create_time varchar, category3_name varchar, spu_name
+varchar, tm_name varchar ) SALT_BUCKETS = 3;
