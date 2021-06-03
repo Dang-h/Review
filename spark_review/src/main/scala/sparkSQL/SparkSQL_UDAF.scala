@@ -46,7 +46,7 @@ object SparkSQL_UDAF {
 		// 注册函数
 		spark.udf.register("aggAvg", functions.udaf(new MyAvgUDAF_1))
 		// 使用
-		spark.sql("select aggAvg(age) from user")//.show
+		spark.sql("select aggAvg(age) from user") //.show
 
 		// TODO 使用SQL & DSL(Domain-Specific-Language特定领域语言)解决早期版本无法使用强类型UDAF函数问题
 		// 将df转换成ds(df中的cloName要和ds创建的样例类变量名保持一致)
@@ -59,7 +59,7 @@ object SparkSQL_UDAF {
 		spark.close()
 	}
 
-	// 自定义累加器
+	// =============================================自定义累加器=========================================
 	class MyAcc extends AccumulatorV2[Int, Int] {
 
 		var sum = 0
@@ -93,61 +93,13 @@ object SparkSQL_UDAF {
 		override def value: Int = sum / count
 	}
 
-	// 弱类型UDAF
-	class MyAvgUDAF extends UserDefinedAggregateFunction {
 
-		// 输入数据的结构
-		override def inputSchema: StructType = {
-			StructType(
-				Array(
-					StructField("age", LongType)
-				)
-			)
-		}
-
-		// 缓冲区数据的结构：Buffer
-		override def bufferSchema: StructType = {
-			StructType(
-				Array(
-					StructField("total", LongType),
-					StructField("count", LongType)
-				)
-			)
-		}
-
-		// 函数计算结果类型
-		override def dataType: DataType = LongType
-
-		// 函数的稳定性
-		override def deterministic: Boolean = true
-
-		// 缓冲区初始化
-		override def initialize(buffer: MutableAggregationBuffer): Unit = {
-			buffer.update(0, 0L)
-			buffer.update(1, 0L)
-		}
-
-		// 根据输入的值更新缓冲区的数据
-		// 输入的age相加，每输入一个age就+1
-		override def update(buffer: MutableAggregationBuffer, input: Row): Unit = {
-			buffer.update(0, buffer.getLong(0) + input.getLong(0))
-			buffer.update(1, buffer.getLong(1) + 1)
-		}
-
-		// 缓冲区数据合并
-		override def merge(buffer1: MutableAggregationBuffer, buffer2: Row): Unit = {
-			buffer1.update(0, buffer1.getLong(0) + buffer2.getLong(0))
-			buffer1.update(1, buffer1.getLong(1) + buffer2.getLong(1))
-		}
-
-		// 计算平均值
-		override def evaluate(buffer: Row): Any = buffer.getLong(0) / buffer.getLong(1)
-	}
-
-	// 强类型Buffer样例类
+	// =============================================强类型UDAF=========================================
+	// 充当Buffer
 	case class Buff(var total: Long, var count: Long)
+
 	// df转ds需要有样例类加持
-	case class User(username:String, age:Long)
+	case class User(username: String, age: Long)
 
 	// 强类型UDAF
 	class MyAvgUDAF_1 extends Aggregator[Long, Buff, Long] {
@@ -208,6 +160,57 @@ object SparkSQL_UDAF {
 	}
 
 
+	// =============================================弱类型UDAF=========================================
+	// 弱类型UDAF
+	class MyAvgUDAF extends UserDefinedAggregateFunction {
+
+		// 输入数据的结构
+		override def inputSchema: StructType = {
+			StructType(
+				Array(
+					StructField("age", LongType)
+				)
+			)
+		}
+
+		// 缓冲区数据的结构：Buffer
+		override def bufferSchema: StructType = {
+			StructType(
+				Array(
+					StructField("total", LongType),
+					StructField("count", LongType)
+				)
+			)
+		}
+
+		// 函数计算结果类型
+		override def dataType: DataType = LongType
+
+		// 函数的稳定性
+		override def deterministic: Boolean = true
+
+		// 缓冲区初始化
+		override def initialize(buffer: MutableAggregationBuffer): Unit = {
+			buffer.update(0, 0L)
+			buffer.update(1, 0L)
+		}
+
+		// 根据输入的值更新缓冲区的数据
+		// 输入的age相加，每输入一个age就+1
+		override def update(buffer: MutableAggregationBuffer, input: Row): Unit = {
+			buffer.update(0, buffer.getLong(0) + input.getLong(0))
+			buffer.update(1, buffer.getLong(1) + 1)
+		}
+
+		// 缓冲区数据合并
+		override def merge(buffer1: MutableAggregationBuffer, buffer2: Row): Unit = {
+			buffer1.update(0, buffer1.getLong(0) + buffer2.getLong(0))
+			buffer1.update(1, buffer1.getLong(1) + buffer2.getLong(1))
+		}
+
+		// 计算平均值
+		override def evaluate(buffer: Row): Any = buffer.getLong(0) / buffer.getLong(1)
+	}
 
 }
 

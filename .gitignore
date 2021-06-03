@@ -6,3 +6,5 @@
 /scala_review/target/
 /spark_review/target/
 /.idea
+/data/ratings.csv
+*/target/

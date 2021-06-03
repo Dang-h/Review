@@ -3,15 +3,16 @@ package sparkCore.rddTest
 
 import org.apache.spark.rdd.RDD
 import org.apache.spark.{HashPartitioner, SparkConf, SparkContext}
-
 import java.text.SimpleDateFormat
 import java.util.Date
+
+import org.apache.spark.broadcast.Broadcast
+import utils.Env.makeSc
 
 
 object TransformRDD {
 	def main(args: Array[String]): Unit = {
-		val conf: SparkConf = new SparkConf().setMaster("local[*]").setAppName("TransformRDDTest")
-		val sc = new SparkContext(conf)
+		val sc: SparkContext = makeSc("TransformRDDTest")
 
 		// TODO map:将处理的数据逐条映射，转换数据的格式
 		// 从服务器日志数据 apache.log 中获取用户请求 URL 资源路径
@@ -21,7 +22,6 @@ object TransformRDD {
 			datas(6)
 		})
 		//		 pathOfURL.collect().take(10).foreach(println)
-		apacheLog
 
 		// TODO mapPartitions:以分区为单位处理数据,处理数据时会长时间占用内存，内存太小数据量太大容易溢出
 		// 获取每个数据分区的最大值
@@ -33,8 +33,7 @@ object TransformRDD {
 
 		// TODO mapPartitionsWithIndex:在以分区为单位处理数据时可获取当前分区序号
 		// 获取第二个数据分区的数据
-		val value: RDD[Int] = sc.makeRDD(List(1, 2, 3, 4))
-		val mpwiRDD: RDD[Int] = value.mapPartitionsWithIndex(
+		val mpwiRDD: RDD[Int] = valueList.mapPartitionsWithIndex(
 			(index, iter: Iterator[Int]) => {
 				println(index + "---" + iter.toList)
 				if (index == 1) {
@@ -48,7 +47,7 @@ object TransformRDD {
 		)
 		// mpwiRDD.collect().foreach(println)
 
-		val value1: RDD[(Int, Int)] = value.mapPartitionsWithIndex(
+		val value1: RDD[(Int, Int)] = valueList.mapPartitionsWithIndex(
 			(index, dataIter) => {
 				dataIter.map(num => (index, num))
 			}
@@ -65,8 +64,7 @@ object TransformRDD {
 		//value3.collect().foreach(println)
 
 		// TODO glom:将同一分区的数据直接转换成相同类型的内存数组
-		val value4: RDD[Int] = sc.makeRDD(List(1, 2, 3, 4), 2)
-		val glomRDD: RDD[Array[Int]] = value4.glom()
+		val glomRDD: RDD[Array[Int]] = valueList.glom()
 		//glomRDD.collect().foreach((data: Array[Int]) => println(data.mkString(",")))
 
 		// 取出每个分区的最大值
@@ -95,23 +93,14 @@ object TransformRDD {
 		val group4First: RDD[(Char, String)] = listRdd.groupBy(_.charAt(0)).map { case (c, iter) => (c, iter.mkString(",")) }
 		//group4First.collect.foreach(println)
 
-		// TODO groupBy的join中的优化使用
-		val rdd111 = sc.parallelize(Array((1, 1), (1, 2), (2, 1), (3, 1), (1, 2), (2, 1), (3, 1))).partitionBy(new
-			HashPartitioner(2)).persist()
-		val rdd211 = sc.parallelize(Array((1, 'x'), (2, 'y'), (2, 'z'), (4, 'w'), (2, 'y'), (2, 'z'), (4, 'w')))
+		// TODO partitionBy的join中的优化使用
+		// 指定分区器和分区数，分区器和分区数相同时可以不走shuffle
+		val rdd111 = sc.parallelize(Array((1, 1), (1, 2), (2, 1), (3, 1), (1, 2), (2, 1), (3, 1))).partitionBy(new HashPartitioner(2))
+		val rdd211 = sc.parallelize(Array((1, 'x'), (2, 'y'), (2, 'z'), (4, 'w'), (2, 'y'), (2, 'z'), (4, 'w'))).partitionBy(new HashPartitioner(2))
 
-		val rdd111_1 = sc.parallelize(Array((1, 1), (1, 2), (2, 1), (3, 1), (1, 2), (2, 1), (3, 1)))
-		val rdd211_1 = sc.parallelize(Array((1, 'x'), (2, 'y'), (2, 'z'), (4, 'w'), (2, 'y'), (2, 'z'), (4, 'w')))
-
-		/** 有优化效果 ,rdd1 不再需要 shuffle */
+		/** 有优化效果 ,join 不再需要 shuffle */
 		rdd111.join(rdd211).collect()
-		rdd111_1.join(rdd211_1).collect()
 
-		/** 有优化效果 ,rdd1 不再需要 shuffle */
-		rdd111.join(rdd211, new HashPartitioner(2))
-
-		/** 无优化效果 ,rdd1 需要再次 shuffle */
-		rdd111.join(rdd211, new HashPartitioner(3))
 
 		// TODO filter：根据指定规则进行过滤，符合规则保留，分区不变，但分区内数据不均匀，易发生数据倾斜
 		// 从服务器日志数据 apache.log 中获取 2015 年 5 月 17 日的请求路径
@@ -124,9 +113,9 @@ object TransformRDD {
 		// 三个参数：①：抽取是否放回，true（放回）false（不放回）
 		// 		   ②：抽取不放回场合：数据源中每条数据被抽取的概率；抽取放回场合：数据源中每条数据被抽取的可能次数
 		//		   ③：抽取数据时随机算法的种子：不传递则使用当前系统时间
-		val numRdd: RDD[Int] = sc.makeRDD(List(1, 2, 3, 4, 5, 6, 7, 8, 9, 10))
-		//println(numRdd.sample(false, 0.5).collect.mkString(","))
-		//println(numRdd.sample(true, 0.5).collect.mkString(","))
+		val numRdd = sc.makeRDD(List(1, 2, 3, 4, 5, 6, 7, 8, 9, 10))
+//		println(numRdd.sample(false, 0.5).collect.mkString(","))
+//		println(numRdd.sample(true, 0.5).collect.mkString(","))
 
 		// TODO distinct：去重
 		val replicationNum: RDD[Int] = sc.makeRDD(List(1, 2, 3, 4, 1, 2, 3, 4))
@@ -156,6 +145,8 @@ object TransformRDD {
 		// TODO partitionByKey:将数据按指定的Partitioner进行分区；默认的分区器为HashPartitioner
 
 		// TODO reduceByKey：对相同Key数据的Value聚合；在shuffle前对分区内相同Key的数据进行预聚合，减少落盘的数据量；功能上包含分组和聚合;相同key的第一个数据不参与计算
+		val rddT: RDD[(String, Int)] = sc.makeRDD(List(("a", 1), ("a", 2), ("a", 3), ("a", 4), ("a", 5), ("a", 6), ("b", 7), ("b", 8), ("b", 9)))
+		rddT.reduceByKey(_+_)
 
 		// TODO groupByKey：将数据源根据Key对Value进行分组；不存在预聚合，功能只有分组
 
@@ -267,13 +258,13 @@ object TransformRDD {
 		rdd1.cogroup(rdd2).map(iter => (iter._1, (iter._2._1.sum + iter._2._2.sum))).collect.foreach(println)
 
 		// TODO 使用Broadcast变量与map类算子实现join操作，进而完全规避掉shuffle类的操作
-		val smallRDD = sc.parallelize(Array(
+		val smallRDD: collection.Map[String, String] = sc.parallelize(List(
 			("1", "zhangsan"),
 			("2", "lisi"),
 			("3", "wangwu")
 		)).collectAsMap()
 
-		val smallBroadCast = sc.broadcast(smallRDD)
+		val smallBroadCast: Broadcast[collection.Map[String, String]] = sc.broadcast(smallRDD)
 
 		val bigRDD = sc.parallelize(Array(
 			("1", "school1", "male"),

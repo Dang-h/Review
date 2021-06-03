@@ -1,47 +1,72 @@
 {
-  "name": "songsong",
-  "friends": [
-    "bingbing",
-    "lili"
+  "index_patterns": [
+    "gmall_order_info*"
   ],
-  "children": {
-    "xiao song": 18,
-    "xiaoxiao song": 19
+  "settings": {
+    "number_of_shards": 3
   },
-  "address": {
-    "street": "hui long guan",
-    "city": "beijing"
+  "aliases": {
+    "{index}-query": {},
+    "gmall_order_info-query": {}
+  },
+  "mappings": {
+    "_doc": {
+      "properties": {
+        "id": {
+          "type": "long"
+        },
+        "province_id": {
+          "type": "long"
+        },
+        "order_status": {
+          "type": "keyword"
+        },
+        "user_id": {
+          "type": "long"
+        },
+        "final_total_amount": {
+          "type": "double"
+        },
+        "benefit_reduce_amount": {
+          "type": "double"
+        },
+        "original_total_amount": {
+          "type": "double"
+        },
+        "feight_fee": {
+          "type": "double"
+        },
+        "expire_time": {
+          "type": "keyword"
+        },
+        "create_time": {
+          "type": "keyword"
+        },
+        "create_date": {
+          "type": "date"
+        },
+        "create_hour": {
+          "type": "keyword"
+        },
+        "if_first_order": {
+          "type": "keyword"
+        },
+        "province_name": {
+          "type": "keyword"
+        },
+        "province_area_code": {
+          "type": "keyword"
+        },
+        "province_iso_code": {
+          "type": "keyword"
+        },
+        "user_age_group": {
+          "type": "keyword"
+        },
+        "user_gender": {
+          "type": "keyword"
+        }
+      }
+    }
   }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 }

@@ -4,7 +4,7 @@
 	<!-- jdbc 连接的 URL -->
 	<property>
 		<name>javax.jdo.option.ConnectionURL</name>
-		<value>jdbc:mysql://hadoop100:3306/metastore3?useSSL=false&amp;createDatabaseIfNotExist=true&amp;useUnicode=true&amp;characterEncoding=UTF-8</value>
+		<value>jdbc:mysql://hadoop100:3306/metastore?useSSL=false&amp;createDatabaseIfNotExist=true&amp;useUnicode=true&amp;characterEncoding=UTF-8</value>
 	</property>
 
 	<!-- jdbc 连接的 Driver-->

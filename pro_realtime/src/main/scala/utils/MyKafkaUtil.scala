@@ -17,7 +17,7 @@ object MyKafkaUtil {
 	private val broker_list: String = prop.getProperty("kafka.broker.list")
 
 	// Map要加泛型！！！
-	var kafkaParam = collection.mutable.Map[String, Object](
+	var kafkaParam: mutable.Map[String, Object] = collection.mutable.Map[String, Object](
 		ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG -> broker_list,
 		ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG -> classOf[StringDeserializer],
 		ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG -> classOf[StringDeserializer],
@@ -67,7 +67,7 @@ object MyKafkaUtil {
 	 * @param groupId
 	 * @return
 	 */
-	def getKafkaStream(topic: String, ssc: StreamingContext, groupId: String) = {
+	def getKafkaStream(topic: String, ssc: StreamingContext, groupId: String): InputDStream[ConsumerRecord[String, String]] = {
 		kafkaParam(ConsumerConfig.GROUP_ID_CONFIG) = groupId
 		val dStream: InputDStream[ConsumerRecord[String, String]] = KafkaUtils.createDirectStream[String, String](
 			ssc,
