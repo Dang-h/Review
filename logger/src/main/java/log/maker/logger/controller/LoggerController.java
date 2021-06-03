@@ -27,15 +27,15 @@ public class LoggerController {
 
 	@RequestMapping("/app_log")
 	public String appLog(@RequestBody String mockLog) {
-//		System.out.println(mockLog);
+		System.out.println(mockLog);
 		log.info(mockLog);
 
 
 //		 根据日志类型发送到不同topic中
 		JSONObject jsonObject = JSON.parseObject(mockLog);
-		String startJson = jsonObject.getString("start");
+		String topic1Json = jsonObject.getString(topic1);
 
-		if (startJson != null) {
+		if (topic1Json != null) {
 			kafkaTemplate.send(topic1, mockLog);
 		} else {
 			kafkaTemplate.send(topic2, mockLog);
