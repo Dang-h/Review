@@ -3,9 +3,11 @@ import org.junit.Test;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.text.DecimalFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Random;
 
 public class TestMethods {
 	@Test
@@ -67,7 +69,7 @@ public class TestMethods {
 		FileReader fr = new FileReader(file);
 
 		char[] buffer = new char[5];
-		int len ;
+		int len;
 		while ((len = fr.read(buffer)) != -1) {
 			String str = new String(buffer, 0, len);
 			System.out.print(str);
@@ -76,8 +78,22 @@ public class TestMethods {
 		fr.close();
 	}
 
+
 	@Test
-	public void testBufferedInputStream(){
-		File file = new File("testFileWriter.txt");
+	public void testRandom() {
+		DecimalFormat df = new DecimalFormat("#.00");
+
+		for (int i = 0; i < 50; i++) {
+			int randomInt = new Random().nextInt(2000) + 200;
+			double v = new Random().nextDouble();
+//			System.out.println(df.format(v*(100 -1 ) + 1));
+			System.out.println(randomInt);
+		}
+	}
+
+	@Test
+	public void testTime(){
+		SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+		df.format(new Date(System.currentTimeMillis()));
 	}
 }
