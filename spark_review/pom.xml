@@ -18,6 +18,13 @@
 
     <dependencies>
 
+<!--        <dependency>-->
+<!--            <groupId>org.apache.hadoop</groupId>-->
+<!--            <artifactId>hadoop-common</artifactId>-->
+<!--            <version>2.7.4</version>-->
+<!--            <scope>compile</scope>-->
+<!--        </dependency>-->
+
         <!-- 操作数据库 -->
         <dependency>
             <groupId>commons-dbutils</groupId>
