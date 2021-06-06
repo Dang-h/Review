@@ -4,7 +4,8 @@
 - [查看Log](#查看Log)
 - [修改Topic](#修改Topic)
 - [生产消息](#生产消息)
-- [消费者组](#消费者组)
+- [消费消息](#消费消息)
+  - [消费者组](#消费者组)
 - [压力测试](#压力测试)
 
 ## 创建Topic
@@ -28,7 +29,7 @@
 ## 生产消息
 	kafka-console-producer.sh --broker-list hadoop100:9092 --topic first
 ---
-## 消费消息：
+## 消费消息
 ### 消费指定消费者组，并从头开始消费
     kafka-console-consumer.sh --bootstrap-server hadoop100:9092
                               --topic first
