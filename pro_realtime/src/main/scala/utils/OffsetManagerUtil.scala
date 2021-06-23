@@ -20,7 +20,7 @@ object OffsetManagerUtil {
 	 *
 	 * @param topic   主题
 	 * @param groupId 消费者组
-	 * @return 当前消费者组中，消费者主题对应的分区偏移量信息：Map[TopicPartition, Long]
+	 * @return 当前消费者组中，消费者主题对应的分区偏移量信息：Map[(Topic,Partition), endOffset]
 	 */
 	def getOffset(topic: String, groupId: String): Map[TopicPartition, Long] = {
 
@@ -28,6 +28,7 @@ object OffsetManagerUtil {
 		var offsetKey: String = "offset:" + topic + ":" + groupId
 
 		// 获取当前消费者组消费的主题和对应分区的偏移量
+		// (String,String) = (partitionId,endOffset)
 		val offsetMap: util.Map[String, String] = jedis.hgetAll(offsetKey)
 
 		jedis.close()
@@ -49,7 +50,7 @@ object OffsetManagerUtil {
 	 *
 	 * @param topic        主题
 	 * @param groupId      消费者组
-	 * @param offsetRanges 偏移量范围
+	 * @param offsetRanges 偏移量范围 (topic, partition, fromOffset, toOffset)
 	 */
 	def saveOffset(topic: String, groupId: String, offsetRanges: Array[OffsetRange]) = {
 		var offsetKey = "offset:" + topic + ":" + groupId
@@ -73,6 +74,8 @@ object OffsetManagerUtil {
 
 		val jedis: Jedis = MyRedisUtil.getRedisClient()
 
+		// offsetKey:offset:topic:groupId
+		// offsetMap:partitionId:endOffset
 		jedis.hmset(offsetKey, offsetMap)
 
 		jedis.close()
