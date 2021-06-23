@@ -1,6 +1,7 @@
 hello word
 hello Hadoop
 hello BigData
+hello BigData
 我想赚钱
 我想玩游戏
 我肚子好饿

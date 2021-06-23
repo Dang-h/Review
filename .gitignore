@@ -9,3 +9,8 @@
 /data/ratings.csv
 */target/
 /sparkCheckPoint/
+/.metals
+*/*/.metals
+/.vscode/
+/*/.vscode/
+/*/.metals/
